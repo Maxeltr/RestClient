@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.GridPane?>
+
+<AnchorPane id="AnchorPane" prefHeight="200" prefWidth="320" xmlns:fx="http://javafx.com/fxml" fx:controller="ru.maxeltr.rstclnt.FXMLController">
+    <children>
+        <ListView fx:id="ListView" layoutX="0" layoutY="30" prefWidth="600" prefHeight="300">
+            <HBox fx:id="listBox" alignment="CENTER_LEFT">
+
+            </HBox>
+            <HBox fx:id="listBox" alignment="CENTER_LEFT">
+
+            </HBox>
+        </ListView>
+        <Button layoutX="126" layoutY="90" text="Click Me!" onAction="#handleButtonAction" fx:id="button" />
+        <Label layoutX="126" layoutY="120" minHeight="16" minWidth="69" fx:id="label" />
+    </children>
+</AnchorPane>

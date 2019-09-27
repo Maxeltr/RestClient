@@ -1,0 +1,41 @@
+//apply plugin: 'java'
+//apply plugin: 'jacoco'
+//apply plugin: 'application'
+
+plugins {
+    id 'application'
+//    id 'org.openjfx.javafxplugin' version '0.0.8'
+}
+
+//repositories {
+//    mavenCentral()
+//}
+
+dependencies {
+    testCompile 'junit:junit:4.12'
+}
+
+//javafx {
+//    version = "11.0.2"
+//    modules = [ 'javafx.controls', 'javafx.fxml']
+//}
+
+mainClassName = 'ru.maxeltr.rstclnt.Main'
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'ru.maxeltr.rstclnt.Main'
+        )
+    }
+}
+description = 'Rest client'
+
+
+
+
+
+
+
+
+
