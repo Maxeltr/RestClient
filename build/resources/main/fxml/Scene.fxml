@@ -8,17 +8,31 @@
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.layout.GridPane?>
 
-<AnchorPane id="AnchorPane" prefHeight="200" prefWidth="320" xmlns:fx="http://javafx.com/fxml" fx:controller="ru.maxeltr.rstclnt.FXMLController">
+<AnchorPane fx:id="root" id="AnchorPane" prefHeight="200" prefWidth="320" xmlns:fx="http://javafx.com/fxml" fx:controller="ru.maxeltr.rstclnt.FXMLController">
     <children>
-        <ListView fx:id="ListView" layoutX="0" layoutY="30" prefWidth="600" prefHeight="300">
-            <HBox fx:id="listBox" alignment="CENTER_LEFT">
+        <MenuBar layoutY="-1.0" prefHeight="30.0" prefWidth="858.0">
+            <menus>
+                <Menu fx:id="menuFile" mnemonicParsing="false" text="File">
+                    <items>
+                        <MenuItem fx:id="menuChooseFolder" mnemonicParsing="false" onAction="#handleButtonAction" text="Choose folder" />
+                        <MenuItem fx:id="menuOpenFile" mnemonicParsing="false" onAction="#handleButtonAction" text="Open file" />
+                        <MenuItem fx:id="menuAddToArchive" mnemonicParsing="false" onAction="#handleButtonAction" text="Add to archive" />
+                        <MenuItem fx:id="menuExit" mnemonicParsing="false" onAction="#handleButtonAction" text="Exit" />
+                    </items>
+                </Menu>
+                <Menu fx:id="menuConfiguration" mnemonicParsing="false" text="Configuration">
+                    <items>
+                        <MenuItem fx:id="menuSetting" mnemonicParsing="false" onAction="#handleButtonAction" text="Setting" />
+                    </items>
+                </Menu>
+                <Menu  mnemonicParsing="false" onAction="#handleButtonAction" text="Help">
+                    <items>
+                        <MenuItem fx:id="menuHelp" mnemonicParsing="false" text="Help" />
+                    </items>
+                </Menu>
+            </menus>
+        </MenuBar>
 
-            </HBox>
-            <HBox fx:id="listBox" alignment="CENTER_LEFT">
-
-            </HBox>
-        </ListView>
-        <Button layoutX="126" layoutY="90" text="Click Me!" onAction="#handleButtonAction" fx:id="button" />
-        <Label layoutX="126" layoutY="120" minHeight="16" minWidth="69" fx:id="label" />
+        <ListView fx:id="fileList" editable="true" layoutX="0" layoutY="30" prefHeight="193.0" prefWidth="471.0" />
     </children>
 </AnchorPane>
