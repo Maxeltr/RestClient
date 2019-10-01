@@ -33,11 +33,13 @@ public class FileModel {
 
     private SimpleStringProperty name;
     private SimpleStringProperty date;
+    private SimpleStringProperty size;
     private SimpleStringProperty type;
 
-    public FileModel(String name, String date, String type) {
+    public FileModel(String name, String date, String size, String type) {
         this.name = new SimpleStringProperty(name);
         this.date = new SimpleStringProperty(date);
+        this.size = new SimpleStringProperty(size);
         this.type = new SimpleStringProperty(type);
     }
 
@@ -55,6 +57,14 @@ public class FileModel {
 
     public void setDate(String date) {
         this.date = new SimpleStringProperty(date);
+    }
+
+    public String getSize() {
+        return size.get();
+    }
+
+    public void setSize(String size) {
+        this.size = new SimpleStringProperty(size);
     }
 
     public String getType() {
