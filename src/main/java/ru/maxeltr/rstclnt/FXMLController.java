@@ -1,5 +1,6 @@
 package ru.maxeltr.rstclnt;
 
+import javafx.geometry.Rectangle2D;
 import java.io.BufferedReader;
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -16,6 +17,9 @@ import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
+import javafx.geometry.Point2D;
+import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.TableColumn;
@@ -30,6 +34,8 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.input.ScrollEvent;
 
 public class FXMLController implements Initializable {
 
@@ -54,13 +60,21 @@ public class FXMLController implements Initializable {
     @FXML
     private StackPane textOrImagePane;
 
-    private ObservableList<FileModel> items = FXCollections.observableArrayList();
+    private final ObservableList<FileModel> items = FXCollections.observableArrayList();
 
     private File currentFolder;
 
     private TextArea logTextArea;
 
     private ImageView logImageView;
+
+    private ScrollPane logScrollPane;
+
+    private double currentScale = 1;
+    private final double SCALE_MIN = 0.1;
+    private final double SCALE_MAX = 5;
+    private double x;
+    private double y;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -74,6 +88,24 @@ public class FXMLController implements Initializable {
         logTextArea.setEditable(false);
 
         logImageView = new ImageView();
+        logImageView.setPreserveRatio(true);
+
+        logScrollPane = new ScrollPane();
+        logScrollPane.setPannable(true);
+        logScrollPane.setContent(new Group(logImageView));
+
+        logImageView.setOnScroll((ScrollEvent event) -> {
+            double delta = event.getDeltaY();
+            double scale = Math.pow(1.01, delta);
+
+            double curScale = scale * currentScale;
+            if (curScale >= SCALE_MIN && curScale <= SCALE_MAX) {
+                logImageView.setScaleX(logImageView.getScaleX() * scale);
+                logImageView.setScaleY(logImageView.getScaleY() * scale);
+                currentScale = curScale;
+            }
+            event.consume();
+        });
     }
 
     @FXML
@@ -88,7 +120,7 @@ public class FXMLController implements Initializable {
             for (File file : files) {
                 SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
 
-                String fileType = "";
+                String fileType;
                 String fileName = file.getName();
                 fileType = Files.probeContentType(file.toPath());
                 if (fileType == null) {
@@ -147,15 +179,16 @@ public class FXMLController implements Initializable {
                         if (textOrImagePane.getChildren().contains(logTextArea)) {
                             textOrImagePane.getChildren().remove(logTextArea);
                         }
-                        if (!textOrImagePane.getChildren().contains(logImageView)) {
-                            textOrImagePane.getChildren().add(logImageView);
+                        if (!textOrImagePane.getChildren().contains(logScrollPane)) {
+                            textOrImagePane.getChildren().add(logScrollPane);
                         }
+
                         Image img = new Image("file:" + this.currentFolder + "\\" + fileModel.getName());
                         logImageView.setImage(img);
 
                         break;
                     default:
-
+                        System.err.format("'%s' has an" + " unsupported filetype.%n", fileModel.getName());
                 }
 
             }
