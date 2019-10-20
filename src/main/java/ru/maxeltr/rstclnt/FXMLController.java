@@ -18,10 +18,14 @@ import java.text.SimpleDateFormat;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -35,7 +39,10 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.Pane;
+import javafx.stage.Modality;
 
 public class FXMLController implements Initializable {
 
@@ -193,6 +200,26 @@ public class FXMLController implements Initializable {
 
             }
         }
+    }
+
+    @FXML
+    private void handleMenuSettings(ActionEvent event) throws IOException {
+        OptionController optionsController = new OptionController();
+        URL location = getClass().getResource("/fxml/Options.fxml");
+        FXMLLoader loader = new FXMLLoader(location);
+        optionsController.initData(this);
+        loader.setController(optionsController);
+
+        Scene scene = new Scene((ScrollPane) loader.load());
+        scene.getStylesheets().add("/styles/Styles.css");
+        Stage stage = new Stage();
+        stage.setScene(scene);
+        stage.setTitle("Options");
+        stage.initModality(Modality.WINDOW_MODAL);
+
+        stage.initOwner(this.root.getScene().getWindow());
+        stage.show();
+
     }
 
     @FXML
