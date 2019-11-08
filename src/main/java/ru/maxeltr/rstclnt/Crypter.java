@@ -23,57 +23,79 @@
  */
 package ru.maxeltr.rstclnt;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.AlgorithmParameters;
-import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.InvalidParameterSpecException;
 import java.util.Base64;
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+import ru.maxeltr.rstclnt.Config.Config;
 
 /**
  *
  * @author Maxim Eltratov <Maxim.Eltratov@yandex.ru>
  */
 public class Crypter {
-    
 
-    private static SecretKeySpec createSecretKey(char[] password, byte[] salt, int iterationCount, int keyLength) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    private Config config;
+    private final String password = "1234";
+    private final byte[] salt = "12345678".getBytes();
+    private int iterationCount = 4000;
+    private int keyLength = 128;
+    private SecretKeySpec key;
+    private Cipher pbeCipher;
+
+    public Crypter(Config config) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeySpecException {
+        this.config = config;
+        this.pbeCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        this.key = createSecretKey(this.password, this.salt, this.iterationCount, this.keyLength);
+    }
+
+    public SecretKeySpec createSecretKey(String password, byte[] salt, int iterationCount, int keyLength) throws NoSuchAlgorithmException, InvalidKeySpecException {
         SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
-        PBEKeySpec keySpec = new PBEKeySpec(password, salt, iterationCount, keyLength);
+        PBEKeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt, iterationCount, keyLength);
         SecretKey keyTmp = keyFactory.generateSecret(keySpec);
         return new SecretKeySpec(keyTmp.getEncoded(), "AES");
     }
 
-    private static String encrypt(String property, SecretKeySpec key) throws GeneralSecurityException, UnsupportedEncodingException {
-        Cipher pbeCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        pbeCipher.init(Cipher.ENCRYPT_MODE, key);
-        AlgorithmParameters parameters = pbeCipher.getParameters();
+    public String encrypt(String value) throws UnsupportedEncodingException, InvalidParameterSpecException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
+        if (value.isEmpty()) {
+            return value;
+        }
+        this.pbeCipher.init(Cipher.ENCRYPT_MODE, this.key);
+        AlgorithmParameters parameters = this.pbeCipher.getParameters();
         IvParameterSpec ivParameterSpec = parameters.getParameterSpec(IvParameterSpec.class);
-        byte[] cryptoText = pbeCipher.doFinal(property.getBytes("UTF-8"));
+        byte[] cryptoText = this.pbeCipher.doFinal(value.getBytes("UTF-8"));
         byte[] iv = ivParameterSpec.getIV();
         return base64Encode(iv) + ":" + base64Encode(cryptoText);
     }
 
-    private static String base64Encode(byte[] bytes) {
-        return Base64.getEncoder().encodeToString(bytes);
+    public String decrypt(String value) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException {
+        if (value.isEmpty()) {
+            return value;
+        }
+        String iv = value.split(":")[0];
+        String cryptoText = value.split(":")[1];
+        this.pbeCipher.init(Cipher.DECRYPT_MODE, this.key, new IvParameterSpec(base64Decode(iv)));
+        return new String(this.pbeCipher.doFinal(base64Decode(cryptoText)), "UTF-8");
     }
 
-    private static String decrypt(String string, SecretKeySpec key) throws GeneralSecurityException, IOException {
-        String iv = string.split(":")[0];
-        String property = string.split(":")[1];
-        Cipher pbeCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        pbeCipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(base64Decode(iv)));
-        return new String(pbeCipher.doFinal(base64Decode(property)), "UTF-8");
+    private String base64Encode(byte[] value) {
+        return Base64.getEncoder().encodeToString(value);
     }
 
-    private static byte[] base64Decode(String property) throws IOException {
-        return Base64.getDecoder().decode(property);
+    private byte[] base64Decode(String value) {
+        return Base64.getDecoder().decode(value);
     }
 }

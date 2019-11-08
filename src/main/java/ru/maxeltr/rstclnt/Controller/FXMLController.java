@@ -1,6 +1,5 @@
-package ru.maxeltr.rstclnt;
+package ru.maxeltr.rstclnt.Controller;
 
-import javafx.geometry.Rectangle2D;
 import java.io.BufferedReader;
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -11,21 +10,16 @@ import javafx.stage.DirectoryChooser;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Point2D;
 import javafx.scene.Group;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -36,13 +30,11 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
+import ru.maxeltr.rstclnt.Model.FileModel;
 
 public class FXMLController implements Initializable {
 
@@ -80,8 +72,9 @@ public class FXMLController implements Initializable {
     private double currentScale = 1;
     private final double SCALE_MIN = 0.1;
     private final double SCALE_MAX = 5;
-    private double x;
-    private double y;
+//    private double x;
+//    private double y;
+    private OptionController optionController;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -113,6 +106,10 @@ public class FXMLController implements Initializable {
             }
             event.consume();
         });
+    }
+
+    public FXMLController(OptionController optionController) {
+        this.optionController = optionController;
     }
 
     @FXML
@@ -204,22 +201,17 @@ public class FXMLController implements Initializable {
 
     @FXML
     private void handleMenuSettings(ActionEvent event) throws IOException {
-        OptionController optionsController = new OptionController();
         URL location = getClass().getResource("/fxml/Options.fxml");
         FXMLLoader loader = new FXMLLoader(location);
-        optionsController.initData(this);
-        loader.setController(optionsController);
-
-        Scene scene = new Scene((ScrollPane) loader.load());
+        loader.setController(this.optionController);
+        Scene scene = new Scene(loader.load());
         scene.getStylesheets().add("/styles/Styles.css");
         Stage stage = new Stage();
         stage.setScene(scene);
         stage.setTitle("Options");
         stage.initModality(Modality.WINDOW_MODAL);
-
         stage.initOwner(this.root.getScene().getWindow());
         stage.show();
-
     }
 
     @FXML
