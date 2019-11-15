@@ -38,15 +38,10 @@ import java.util.Properties;
 public class Config {
 
     private Properties properties = new Properties();
-    private Path path;
+    private final Path path;
 
-    Config() {
-        this.path = Paths.get("Config.xml");
-        this.readConfigFromFile();
-    }
-
-    Config(Path path) {
-        this.path = path;
+    Config(String path) {
+        this.path = Paths.get(path);
         this.readConfigFromFile();
     }
 

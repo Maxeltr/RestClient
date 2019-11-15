@@ -27,10 +27,10 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,12 +38,16 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import ru.maxeltr.rstclnt.Config.AppConfig;
 import ru.maxeltr.rstclnt.Config.Config;
 import ru.maxeltr.rstclnt.Crypter;
 
@@ -51,76 +55,75 @@ import ru.maxeltr.rstclnt.Crypter;
  *
  * @author Maxim Eltratov <Maxim.Eltratov@yandex.ru>
  */
-public class OptionController implements Initializable {
+public class PinController extends AbstractController implements Initializable {
 
     @FXML
     private Parent root;
 
     @FXML
-    private TextField prefixField;
+    private PasswordField pinField;
 
     @FXML
-    private TextField keyField;
+    private Button okButton;
 
     @FXML
-    private Button cancelOptionsButton;
+    private Button cancelButton;
 
-    @FXML
-    private Button saveOptionsButton;
-
-    private final Crypter crypter;
-
-    private final Config config;
-
-    public OptionController(Config config, Crypter crypter) {
-        this.config = config;
-        this.crypter = crypter;
-    }
+    private char[] pin = {};
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        this.getNonEncryptedSettings();
-        this.getEncryptedSettings();
+
+    }
+
+    public PinController() {
+
+    }
+
+    public void clearPin() {
+        for (int i = 0; i < this.pin.length; i++) {
+            this.pin[i] = 0;
+        }
+        this.pin = new char[0];
+    }
+
+    public char[] getPin() {
+        return this.pin;
+    }
+
+    public Boolean initialize() {
+        try {
+            this.showPinForm();
+        } catch (IOException ex) {
+            Logger.getLogger(PinController.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return this.isInitialized();
+    }
+
+    public Boolean isInitialized() {
+        return (this.pin.length != 0);
+    }
+
+    private void showPinForm() throws IOException {
+        Scene scene = new Scene(this.loadView("/fxml/Pin.fxml", this));
+        scene.getStylesheets().add(AppConfig.CSS_PATHNAME);
+        Stage stage = this.createStage(scene, "PIN", this.root.getScene().getWindow(), Modality.WINDOW_MODAL);
+        stage.showAndWait();
     }
 
     @FXML
-    private void handleSaveOptions(ActionEvent event) {
-        this.saveNonEncryptedSettings();
-        this.saveEncryptedSettings();
-
-        Stage stage = (Stage) this.saveOptionsButton.getScene().getWindow();
+    private void handleOkButton(ActionEvent event) {
+        this.pin = this.pinField.getText().toCharArray();
+        this.pinField.clear();
+        Stage stage = (Stage) this.okButton.getScene().getWindow();
         stage.close();
     }
 
-    private void saveEncryptedSettings() {
-        if (! this.crypter.isInitialized()) {
-            return;
-        }
-        this.config.setProperty("Prefix", this.crypter.encrypt(this.prefixField.getText()));
-        this.config.setProperty("Key", this.crypter.encrypt(this.keyField.getText()));
-    }
-
-    private void saveNonEncryptedSettings() {
-
-    }
-
-    private void getEncryptedSettings() {
-        if (! this.crypter.isInitialized()) {
-            if (! this.crypter.initialize()) {
-                return;
-            }
-        }
-        this.prefixField.setText(this.crypter.decrypt(this.config.getProperty("Prefix", "")));
-        this.keyField.setText(this.crypter.decrypt(this.config.getProperty("Key", "")));
-    }
-
-    private void getNonEncryptedSettings() {
-
-    }
-
     @FXML
-    private void handleCancelOptions(ActionEvent event) {
-        Stage stage = (Stage) this.cancelOptionsButton.getScene().getWindow();
+    private void handleCancelButton(ActionEvent event) {
+        this.pinField.clear();
+        Stage stage = (Stage) this.cancelButton.getScene().getWindow();
         stage.close();
     }
 }

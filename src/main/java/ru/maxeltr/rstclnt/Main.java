@@ -10,30 +10,31 @@ import ru.maxeltr.rstclnt.Config.AppConfig;
 import javafx.application.Application;
 import static javafx.application.Application.launch;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import ru.maxeltr.rstclnt.Controller.FXMLController;
+import ru.maxeltr.rstclnt.Controller.MainController;
+import ru.maxeltr.rstclnt.Controller.PinController;
 
 /**
  *
  * @author Maxim Eltratov <Maxim.Eltratov@yandex.ru>
  */
+@SpringBootApplication
 public class Main extends Application {
 
     @Override
-    public void start(Stage stage) throws Exception {
-//        Parent root = FXMLLoader.load(getClass().getResource("/fxml/Scene.fxml"));
-
+    public void start(Stage stage) {
         ConfigurableApplicationContext applicationContext = new AnnotationConfigApplicationContext(AppConfig.class);
-        FXMLController fxmlController = applicationContext.getBean(FXMLController.class);
-        URL location = getClass().getResource("/fxml/Scene.fxml");
-        FXMLLoader loader = new FXMLLoader(location);
-        loader.setController(fxmlController);
 
-        Scene scene = new Scene(loader.load());
-        scene.getStylesheets().add("/styles/Styles.css");
+        Scene scene = new Scene((Parent) applicationContext.getBean("mainView"));
+        scene.getStylesheets().add(AppConfig.CSS_PATHNAME);
 
         stage.setTitle("JavaFX and Gradle");
         stage.setScene(scene);

@@ -15,16 +15,15 @@ import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.scene.control.TableView;
-import javafx.scene.control.TextArea;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -34,10 +33,10 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.ScrollEvent;
 import javafx.stage.Modality;
+import ru.maxeltr.rstclnt.Config.AppConfig;
 import ru.maxeltr.rstclnt.Model.FileModel;
 
-public class FXMLController implements Initializable {
-
+public class MainController extends AbstractController implements Initializable {
     @FXML
     private Parent root;
 
@@ -59,11 +58,9 @@ public class FXMLController implements Initializable {
     @FXML
     private StackPane textOrImagePane;
 
-    private final ObservableList<FileModel> items = FXCollections.observableArrayList();
-
     private File currentFolder;
 
-    private TextArea logTextArea;
+    private ListView<String> logListView;
 
     private ImageView logImageView;
 
@@ -72,20 +69,17 @@ public class FXMLController implements Initializable {
     private double currentScale = 1;
     private final double SCALE_MIN = 0.1;
     private final double SCALE_MAX = 5;
-//    private double x;
-//    private double y;
-    private OptionController optionController;
+
+    private final OptionController optionController;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        name.setCellValueFactory(new PropertyValueFactory<>("Name"));
-        date.setCellValueFactory(new PropertyValueFactory<>("Date"));
+        name.setCellValueFactory(new PropertyValueFactory<>("name"));
+        date.setCellValueFactory(new PropertyValueFactory<>("date"));
         size.setCellValueFactory(new PropertyValueFactory<>("size"));
         type.setCellValueFactory(new PropertyValueFactory<>("type"));
 
-        logTextArea = new TextArea();
-        logTextArea.setMaxHeight(Double.MAX_VALUE);
-        logTextArea.setEditable(false);
+        logListView = new ListView<>();
 
         logImageView = new ImageView();
         logImageView.setPreserveRatio(true);
@@ -108,32 +102,28 @@ public class FXMLController implements Initializable {
         });
     }
 
-    public FXMLController(OptionController optionController) {
+    public MainController(OptionController optionController) {
         this.optionController = optionController;
     }
 
     @FXML
     private void handleChooseFolder(ActionEvent event) throws IOException {
-        final DirectoryChooser chooser = new DirectoryChooser();
+        DirectoryChooser chooser = new DirectoryChooser();
         Window stage = (Stage) root.getScene().getWindow();
-        currentFolder = chooser.showDialog(stage);
-        if (currentFolder != null) {
-            fileTable.getItems().clear();
-            logTextArea.setText("");
+        this.currentFolder = chooser.showDialog(stage);
+        if (this.currentFolder != null) {
+            this.fileTable.getItems().clear();
+            this.logListView.getItems().clear();
+            this.logImageView.setImage(null);
             File[] files = currentFolder.listFiles((File dir, String name1) -> name1.toLowerCase().endsWith(".log") || name1.toLowerCase().endsWith(".jpg"));
+            SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+            String fileType, fileName;
+            ObservableList<FileModel> items = FXCollections.observableArrayList();
             for (File file : files) {
-                SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
-
-                String fileType;
-                String fileName = file.getName();
+                fileName = file.getName();
                 fileType = Files.probeContentType(file.toPath());
                 if (fileType == null) {
-                    String extension = "";
-                    int i = fileName.lastIndexOf('.');
-                    if (i > 0) {
-                        extension = fileName.substring(i + 1);
-                    }
-                    if ("log".equals(extension.toLowerCase())) {
+                    if (fileName.toLowerCase().endsWith(".log")) {
                         fileType = "text/plain";
                     } else {
                         System.err.format("'%s' has an" + " unknown filetype.%n", file.toPath());
@@ -145,50 +135,47 @@ public class FXMLController implements Initializable {
                         continue;
                     }
                 }
-
                 items.add(new FileModel(fileName, sdf.format(file.lastModified()), "" + file.length(), fileType));
             }
-            fileTable.setItems(items);
-        } else {
-
+            this.fileTable.setItems(items);
         }
     }
 
     @FXML
     private void handleFileTableClicked(MouseEvent event) throws FileNotFoundException, IOException {
         if (event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 2) {
-            FileModel fileModel = fileTable.getSelectionModel().getSelectedItem();
+            FileModel fileModel = this.fileTable.getSelectionModel().getSelectedItem();
             if (fileModel != null) {
                 switch (fileModel.getType()) {
                     case ("text/plain"):
-                        if (textOrImagePane.getChildren().contains(logImageView)) {
-                            textOrImagePane.getChildren().remove(logImageView);
+                        if (this.textOrImagePane.getChildren().contains(this.logImageView)) {
+                            this.textOrImagePane.getChildren().remove(this.logImageView);
                         }
-                        if (!textOrImagePane.getChildren().contains(logTextArea)) {
-                            textOrImagePane.getChildren().add(logTextArea);
+                        if (! this.textOrImagePane.getChildren().contains(this.logListView)) {
+                            this.textOrImagePane.getChildren().add(this.logListView);
                         }
+                        this.logListView.getItems().clear();
+                        ObservableList<String> lvItems = FXCollections.observableArrayList();
                         try (BufferedReader br = new BufferedReader(new FileReader(this.currentFolder + "\\" + fileModel.getName()))) {
-                            StringBuilder sb = new StringBuilder();
                             String line = br.readLine();
                             while (line != null) {
-                                sb.append(line);
-                                sb.append(System.lineSeparator());
+                                String str = line.replaceAll("[\\n\\r]+","");   //TODO
+                                if (str.length() > 1) lvItems.add(str);
                                 line = br.readLine();
                             }
-                            String everything = sb.toString();
-                            logTextArea.setText(everything);
+                            this.logListView.setItems(lvItems);
                         }
                         break;
                     case ("image/jpeg"):
-                        if (textOrImagePane.getChildren().contains(logTextArea)) {
-                            textOrImagePane.getChildren().remove(logTextArea);
+                        if (this.textOrImagePane.getChildren().contains(this.logListView)) {
+                            this.textOrImagePane.getChildren().remove(this.logListView);
                         }
-                        if (!textOrImagePane.getChildren().contains(logScrollPane)) {
-                            textOrImagePane.getChildren().add(logScrollPane);
+                        if (! this.textOrImagePane.getChildren().contains(this.logScrollPane)) {
+                            this.textOrImagePane.getChildren().add(this.logScrollPane);
                         }
 
                         Image img = new Image("file:" + this.currentFolder + "\\" + fileModel.getName());
-                        logImageView.setImage(img);
+                        this.logImageView.setImage(img);
 
                         break;
                     default:
@@ -201,16 +188,9 @@ public class FXMLController implements Initializable {
 
     @FXML
     private void handleMenuSettings(ActionEvent event) throws IOException {
-        URL location = getClass().getResource("/fxml/Options.fxml");
-        FXMLLoader loader = new FXMLLoader(location);
-        loader.setController(this.optionController);
-        Scene scene = new Scene(loader.load());
-        scene.getStylesheets().add("/styles/Styles.css");
-        Stage stage = new Stage();
-        stage.setScene(scene);
-        stage.setTitle("Options");
-        stage.initModality(Modality.WINDOW_MODAL);
-        stage.initOwner(this.root.getScene().getWindow());
+        Scene scene = new Scene(this.loadView("/fxml/Options.fxml", this.optionController));
+        scene.getStylesheets().add(AppConfig.CSS_PATHNAME);
+        Stage stage = this.createStage(scene, "Options", this.root.getScene().getWindow(), Modality.WINDOW_MODAL);
         stage.show();
     }
 

@@ -23,13 +23,18 @@
  */
 package ru.maxeltr.rstclnt.Config;
 
+import java.io.IOException;
+import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javax.crypto.NoSuchPaddingException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import ru.maxeltr.rstclnt.Controller.FXMLController;
+import ru.maxeltr.rstclnt.Controller.MainController;
 import ru.maxeltr.rstclnt.Controller.OptionController;
+import ru.maxeltr.rstclnt.Controller.PinController;
 import ru.maxeltr.rstclnt.Crypter;
 
 /**
@@ -38,23 +43,52 @@ import ru.maxeltr.rstclnt.Crypter;
  */
 @Configuration
 public class AppConfig {
+
+    public static final String CONFIG_PATHNAME = "Configuration.xml";
+    public static final String CSS_PATHNAME = "/styles/Styles.css";
+    public static final byte[] SALT = "12345678".getBytes();
+    public static final int ITERATION_COUNT = 4000;
+    public static final int KEY_LENGTH = 128;
+
     @Bean
     public Config config() {
-        return new Config();
+        return new Config(CONFIG_PATHNAME);
     }
 
     @Bean
-    public Crypter crypter() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeySpecException {
-        return new Crypter(config());
+    public Crypter crypter(PinController pinController) throws NoSuchAlgorithmException, NoSuchPaddingException {
+        return new Crypter(pinController);
     }
 
     @Bean
-    public OptionController optionsController(Config config, Crypter crypter) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeySpecException {
+    public OptionController optionController(Config config, Crypter crypter) {
         return new OptionController(config, crypter);
     }
 
     @Bean
-    public FXMLController fxmlController(OptionController optionController) {
-        return new FXMLController(optionController);
+    public MainController mainController(OptionController optionController) {
+        return new MainController(optionController);
+    }
+
+    @Bean
+    public PinController pinController() {
+        return new PinController();
+    }
+
+    @Bean(name = "mainView")
+    public Parent getMainView(MainController mainController) throws IOException {
+        return loadView("/fxml/Main.fxml", mainController);
+    }
+
+//    @Bean(name = "pinView")
+//    public Parent getPinView(PinController pinController) throws IOException {
+//        return loadView("/fxml/Pin.fxml", pinController);
+//    }
+
+    private Parent loadView(String fxml, Object controller) throws IOException {
+        URL location = getClass().getResource(fxml);
+        FXMLLoader loader = new FXMLLoader(location);
+        loader.setController(controller);
+        return loader.load();
     }
 }

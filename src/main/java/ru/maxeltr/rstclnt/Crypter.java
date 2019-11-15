@@ -23,6 +23,7 @@
  */
 package ru.maxeltr.rstclnt;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
@@ -31,6 +32,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.Base64;
+import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -40,7 +44,10 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+import ru.maxeltr.rstclnt.Config.AppConfig;
 import ru.maxeltr.rstclnt.Config.Config;
+import ru.maxeltr.rstclnt.Controller.MainController;
+import ru.maxeltr.rstclnt.Controller.PinController;
 
 /**
  *
@@ -48,47 +55,93 @@ import ru.maxeltr.rstclnt.Config.Config;
  */
 public class Crypter {
 
-    private Config config;
-    private final String password = "1234";
-    private final byte[] salt = "12345678".getBytes();
-    private int iterationCount = 4000;
-    private int keyLength = 128;
-    private SecretKeySpec key;
-    private Cipher pbeCipher;
+    private final PinController pin;
+    private final Cipher pbeCipher;
 
-    public Crypter(Config config) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeySpecException {
-        this.config = config;
+    public Crypter(PinController pinController) throws NoSuchAlgorithmException, NoSuchPaddingException {
+        this.pin = pinController;
         this.pbeCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        this.key = createSecretKey(this.password, this.salt, this.iterationCount, this.keyLength);
     }
 
-    public SecretKeySpec createSecretKey(String password, byte[] salt, int iterationCount, int keyLength) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    public SecretKeySpec createSecretKey(char[] password, byte[] salt, int iterationCount, int keyLength) throws NoSuchAlgorithmException, InvalidKeySpecException {
         SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
-        PBEKeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt, iterationCount, keyLength);
+        PBEKeySpec keySpec = new PBEKeySpec(password, salt, iterationCount, keyLength);
         SecretKey keyTmp = keyFactory.generateSecret(keySpec);
         return new SecretKeySpec(keyTmp.getEncoded(), "AES");
     }
 
-    public String encrypt(String value) throws UnsupportedEncodingException, InvalidParameterSpecException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
+    public String encrypt(String value) {
         if (value.isEmpty()) {
-            return value;
+            return "";
         }
-        this.pbeCipher.init(Cipher.ENCRYPT_MODE, this.key);
-        AlgorithmParameters parameters = this.pbeCipher.getParameters();
-        IvParameterSpec ivParameterSpec = parameters.getParameterSpec(IvParameterSpec.class);
-        byte[] cryptoText = this.pbeCipher.doFinal(value.getBytes("UTF-8"));
-        byte[] iv = ivParameterSpec.getIV();
+
+        if (! this.isInitialized()) {
+            if (! this.initialize()) {
+                return "";
+            }
+        }
+
+        byte[] cryptoText, iv;
+        try {
+            SecretKeySpec key = createSecretKey(this.pin.getPin(), AppConfig.SALT, AppConfig.ITERATION_COUNT, AppConfig.KEY_LENGTH);
+            this.pbeCipher.init(Cipher.ENCRYPT_MODE, key);
+            AlgorithmParameters parameters = this.pbeCipher.getParameters();
+            IvParameterSpec ivParameterSpec = parameters.getParameterSpec(IvParameterSpec.class);
+            cryptoText = this.pbeCipher.doFinal(value.getBytes("UTF-8"));
+            iv = ivParameterSpec.getIV();
+        } catch (Exception ex) {
+            //request pass?
+            //show meesagebox?
+            this.pin.clearPin();
+            Logger.getLogger(Crypter.class.getName()).log(Level.SEVERE, null, ex);
+            return "";
+        }
+
         return base64Encode(iv) + ":" + base64Encode(cryptoText);
     }
 
-    public String decrypt(String value) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException {
+    public String decrypt(String value) {
         if (value.isEmpty()) {
-            return value;
+            return "";
         }
-        String iv = value.split(":")[0];
-        String cryptoText = value.split(":")[1];
-        this.pbeCipher.init(Cipher.DECRYPT_MODE, this.key, new IvParameterSpec(base64Decode(iv)));
-        return new String(this.pbeCipher.doFinal(base64Decode(cryptoText)), "UTF-8");
+
+        if (! this.isInitialized()) {
+            if (! this.initialize()) {
+                return "";
+            }
+        }
+
+        String decryptedValue, iv, cryptoText;
+        try {
+            SecretKeySpec key = createSecretKey(this.pin.getPin(), AppConfig.SALT, AppConfig.ITERATION_COUNT, AppConfig.KEY_LENGTH);
+            iv = value.split(":")[0];
+            cryptoText = value.split(":")[1];
+            this.pbeCipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(base64Decode(iv)));
+            decryptedValue = new String(this.pbeCipher.doFinal(base64Decode(cryptoText)), "UTF-8");
+        } catch (Exception ex) {
+            //request pass?
+            //show meesagebox?
+            this.pin.clearPin();
+            Logger.getLogger(Crypter.class.getName()).log(Level.SEVERE, null, ex);
+            return "";
+        }
+
+        return decryptedValue;
+    }
+
+    public Boolean initialize() {
+        return this.pin.initialize();
+    }
+
+    public Boolean isInitialized() {
+        char[] password = this.pin.getPin();
+        Boolean isInit = (password.length != 0);
+
+        return isInit;
+    }
+
+    private void clearPassword() {
+        this.pin.clearPin();
     }
 
     private String base64Encode(byte[] value) {

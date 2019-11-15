@@ -44,7 +44,7 @@ public class FileModel {
     }
 
     public String getName() {
-        return name.get();
+        return this.name.get();
     }
 
     public void setName(String name) {
@@ -52,7 +52,7 @@ public class FileModel {
     }
 
     public String getDate() {
-        return date.get();
+        return this.date.get();
     }
 
     public void setDate(String date) {
@@ -60,7 +60,7 @@ public class FileModel {
     }
 
     public String getSize() {
-        return size.get();
+        return this.size.get();
     }
 
     public void setSize(String size) {
@@ -68,7 +68,7 @@ public class FileModel {
     }
 
     public String getType() {
-        return type.get();
+        return this.type.get();
     }
 
     public void setType(String type) {
