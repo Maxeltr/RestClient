@@ -63,6 +63,12 @@ public class OptionController implements Initializable {
     private TextField keyField;
 
     @FXML
+    private TextField keyPhraseField;
+
+    @FXML
+    private TextField codePageField;
+
+    @FXML
     private Button cancelOptionsButton;
 
     @FXML
@@ -98,10 +104,11 @@ public class OptionController implements Initializable {
         }
         this.config.setProperty("Prefix", this.crypter.encrypt(this.prefixField.getText()));
         this.config.setProperty("Key", this.crypter.encrypt(this.keyField.getText()));
+        this.config.setProperty("KeyPhrase", this.crypter.encrypt(this.keyPhraseField.getText()));
     }
 
     private void saveNonEncryptedSettings() {
-
+        this.config.setProperty("CodePage", this.codePageField.getText());
     }
 
     private void getEncryptedSettings() {
@@ -112,10 +119,11 @@ public class OptionController implements Initializable {
         }
         this.prefixField.setText(this.crypter.decrypt(this.config.getProperty("Prefix", "")));
         this.keyField.setText(this.crypter.decrypt(this.config.getProperty("Key", "")));
+        this.keyPhraseField.setText(this.crypter.decrypt(this.config.getProperty("KeyPhrase", "")));
     }
 
     private void getNonEncryptedSettings() {
-
+        this.codePageField.setText(this.config.getProperty("CodePage", ""));
     }
 
     @FXML

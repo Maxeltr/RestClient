@@ -25,6 +25,8 @@ package ru.maxeltr.rstclnt;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -71,24 +73,28 @@ public class Crypter {
     }
 
     public String encrypt(String value) {
-        if (value.isEmpty()) {
+        return this.encipher(value, this.getPin());
+    }
+
+    public String encrypt(String value, char[] secretKey) {
+        return this.encipher(value, secretKey);
+    }
+
+    private String encipher(String value, char[] secretKey) {      //TODO byte[] value
+        if (value.isEmpty() || secretKey.length == 0) {
             return "";
         }
 
-        if (! this.isInitialized()) {
-            if (! this.initialize()) {
-                return "";
-            }
-        }
-
+        String encryptedValue;
         byte[] cryptoText, iv;
         try {
-            SecretKeySpec key = createSecretKey(this.pin.getPin(), AppConfig.SALT, AppConfig.ITERATION_COUNT, AppConfig.KEY_LENGTH);
+            SecretKeySpec key = createSecretKey(secretKey, AppConfig.SALT, AppConfig.ITERATION_COUNT, AppConfig.KEY_LENGTH);
             this.pbeCipher.init(Cipher.ENCRYPT_MODE, key);
             AlgorithmParameters parameters = this.pbeCipher.getParameters();
             IvParameterSpec ivParameterSpec = parameters.getParameterSpec(IvParameterSpec.class);
             cryptoText = this.pbeCipher.doFinal(value.getBytes("UTF-8"));
             iv = ivParameterSpec.getIV();
+            encryptedValue = base64Encode(iv) + ":" + base64Encode(cryptoText);
         } catch (Exception ex) {
             //request pass?
             //show meesagebox?
@@ -97,23 +103,25 @@ public class Crypter {
             return "";
         }
 
-        return base64Encode(iv) + ":" + base64Encode(cryptoText);
+        return encryptedValue;
     }
 
     public String decrypt(String value) {
-        if (value.isEmpty()) {
-            return "";
-        }
+        return this.decipher(value, this.getPin());
+    }
 
-        if (! this.isInitialized()) {
-            if (! this.initialize()) {
-                return "";
-            }
+    public String decrypt(String value, char[] secretKey) {
+        return this.decipher(value, secretKey);
+    }
+
+    private String decipher(String value, char[] secretKey) {  //TODO return byte[]
+        if (value.isEmpty() || secretKey.length == 0) {
+            return "";
         }
 
         String decryptedValue, iv, cryptoText;
         try {
-            SecretKeySpec key = createSecretKey(this.pin.getPin(), AppConfig.SALT, AppConfig.ITERATION_COUNT, AppConfig.KEY_LENGTH);
+            SecretKeySpec key = createSecretKey(secretKey, AppConfig.SALT, AppConfig.ITERATION_COUNT, AppConfig.KEY_LENGTH);
             iv = value.split(":")[0];
             cryptoText = value.split(":")[1];
             this.pbeCipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(base64Decode(iv)));
@@ -127,6 +135,10 @@ public class Crypter {
         }
 
         return decryptedValue;
+    }
+
+    private char[] getPin() {
+        return this.pin.getPin();
     }
 
     public Boolean initialize() {
@@ -151,4 +163,29 @@ public class Crypter {
     private byte[] base64Decode(String value) {
         return Base64.getDecoder().decode(value);
     }
+
+    public  byte[]  decode(byte[] value, byte[] secretKey) throws UnsupportedEncodingException {  //TODO string to char?
+//        byte[] txt = value.getBytes();
+        byte[] res = new byte[value.length];
+//        byte[] key = secretKey.getBytes();
+
+        for (int i = 0; i < value.length; i++) {
+            res[i] = (byte) (value[i] ^ secretKey[i % secretKey.length]);
+        }
+
+        return res;
+    }
+
+    public String encode(String value, String secretKey) throws UnsupportedEncodingException {
+        byte[] txt = value.getBytes();
+        byte[] key = secretKey.getBytes();
+        byte[] res = new byte[value.length()];
+
+        for (int i = 0; i < txt.length; i++) {
+            res[i] = (byte) (txt[i] ^ key[i % key.length]);
+        }
+
+        return new String(res);
+    }
+
 }

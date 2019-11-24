@@ -66,8 +66,8 @@ public class AppConfig {
     }
 
     @Bean
-    public MainController mainController(OptionController optionController) {
-        return new MainController(optionController);
+    public MainController mainController(OptionController optionController, Crypter crypter, Config config) {
+        return new MainController(optionController, crypter, config);
     }
 
     @Bean
