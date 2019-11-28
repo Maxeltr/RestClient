@@ -73,11 +73,11 @@ public class MainController extends AbstractController implements Initializable 
 
     private File currentFolder;
 
-    private ListView<String> logListView;
+    private ListView<String> textWin;
 
     private ImageView logImageView;
 
-    private ScrollPane logScrollPane;
+    private ScrollPane imgWin;
 
     private double currentScale = 1;
     private final double SCALE_MIN = 0.1;
@@ -100,14 +100,14 @@ public class MainController extends AbstractController implements Initializable 
         size.setCellValueFactory(new PropertyValueFactory<>("size"));
         type.setCellValueFactory(new PropertyValueFactory<>("type"));
 
-        logListView = new ListView<>();
+        textWin = new ListView<>();
 
         logImageView = new ImageView();
         logImageView.setPreserveRatio(true);
 
-        logScrollPane = new ScrollPane();
-        logScrollPane.setPannable(true);
-        logScrollPane.setContent(new Group(logImageView));
+        imgWin = new ScrollPane();
+        imgWin.setPannable(true);
+        imgWin.setContent(new Group(logImageView));
 
         logImageView.setOnScroll((ScrollEvent event) -> {
             double delta = event.getDeltaY();
@@ -130,7 +130,7 @@ public class MainController extends AbstractController implements Initializable 
         this.currentFolder = chooser.showDialog(stage);
         if (this.currentFolder != null) {
             this.fileTable.getItems().clear();
-            this.logListView.getItems().clear();
+            this.textWin.getItems().clear();
             this.logImageView.setImage(null);
             File[] files = currentFolder.listFiles((File dir, String name1) -> name1.toLowerCase().endsWith(".log") || name1.toLowerCase().endsWith(".jpg"));
             SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
@@ -163,127 +163,61 @@ public class MainController extends AbstractController implements Initializable 
         if (event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 2) {
             FileModel fileModel = this.fileTable.getSelectionModel().getSelectedItem();
             if (fileModel != null) {
-                File file;
+                File file = new File(this.currentFolder + "\\" + fileModel.getName());
+                byte[] data = this.readBytes(file);
+
+                if (!this.crypter.isInitialized()) {
+                    this.crypter.initialize();
+                }
+                byte[] key, keyPhrase, prefix, decrypted;
+                String codePage;
+                key = this.crypter.decrypt(this.config.getProperty("Key", ""));
+                prefix = this.crypter.decrypt(this.config.getProperty("Prefix", ""));
+                keyPhrase = this.crypter.decrypt(this.config.getProperty("KeyPhrase", ""));
+                codePage = this.config.getProperty("CodePage", "UTF-8");
+
                 switch (fileModel.getType()) {
                     case ("text/plain"):
-                        if (this.textOrImagePane.getChildren().contains(this.logImageView)) {
-                            this.textOrImagePane.getChildren().remove(this.logImageView);
+                        if (this.textOrImagePane.getChildren().contains(this.imgWin)) {
+                            this.textOrImagePane.getChildren().remove(this.imgWin);
                         }
-                        if (!this.textOrImagePane.getChildren().contains(this.logListView)) {
-                            this.textOrImagePane.getChildren().add(this.logListView);
-                        }
-                        this.logListView.getItems().clear();
-
-                        file = new File(this.currentFolder + "\\" + fileModel.getName());
-                        try (FileInputStream fis = new FileInputStream(file);) {
-                            BufferedInputStream bis = new BufferedInputStream(fis);
-                            byte[] data = new byte[(int) file.length()];
-                            bis.read(data);
-
-                            String key, keyPhrase, prefix, codePage;
-                            byte[] decrypted;
-                            if (!this.crypter.isInitialized()) {
-                                this.crypter.initialize();
-                            }
-                            key = this.crypter.decrypt(this.config.getProperty("Key", ""));
-                            prefix = this.crypter.decrypt(this.config.getProperty("Prefix", ""));
-                            keyPhrase = this.crypter.decrypt(this.config.getProperty("KeyPhrase", ""));
-                            codePage = this.config.getProperty("CodePage", "UTF-8");
-
-                            decrypted = this.crypter.decode(data, key.getBytes());
-                            decrypted = this.crypter.decode(decrypted, prefix.getBytes());
-
-                            byte[] keyPhraseArray = keyPhrase.getBytes();
-                            byte[] decryptedBeginning = Arrays.copyOfRange(decrypted, 0, keyPhraseArray.length);
-
-                            if (!Arrays.equals(keyPhraseArray, decryptedBeginning)) {
-                                decrypted = this.crypter.decode(data, prefix.getBytes());
-                            }
-
-                            String str = new String(decrypted, codePage);
-
-                            ObservableList<String> lvItems = FXCollections.observableArrayList();
-                            for (String s : str.split(System.lineSeparator())) {
-                                lvItems.add(s);
-                            }
-
-                            this.logListView.setItems(lvItems);
-
-                        } catch (IOException e) {
-                            // log error
+                        if (!this.textOrImagePane.getChildren().contains(this.textWin)) {
+                            this.textOrImagePane.getChildren().add(this.textWin);
                         }
 
-//                        try (BufferedReader br = new BufferedReader(new FileReader(this.currentFolder + "\\" + fileModel.getName()))) {
-////                        try (BufferedReader br =  new InputStreamReader(new FileInputStream(this.currentFolder + "\\" + fileModel.getName()), Charset.forName("Windows-1251"));
-//                            String line, key, keyPhrase, prefix, decrypted;
-//                            StringBuilder sb = new StringBuilder();
-//                            line = br.readLine();
-//                            while (line != null) {
-//                                sb.append(line);
-//                                sb.append(System.lineSeparator());
-//                                //line = line.trim();
-//                                //if (! line.equals("")) //lvItems.add(line);
-//                                line = br.readLine();
-//                            }
-//
-//                            if (! this.crypter.isInitialized()) this.crypter.initialize();
-//                            key = this.crypter.decrypt(this.config.getProperty("Key", ""));
-//                            prefix = this.crypter.decrypt(this.config.getProperty("Prefix", ""));
-//                            keyPhrase = this.crypter.decrypt(this.config.getProperty("KeyPhrase", ""));
-//
-////                            decrypted = this.crypter.decrypt(sb.toString(), key.toCharArray());
-////                            if (decrypted.isEmpty()) {
-//                                decrypted = sb.toString();
-////                            }
-//                            decrypted = this.crypter.decode(this.crypter.decode(decrypted, key), prefix);
-//
-//                            if (! decrypted.startsWith(keyPhrase)) {
-//                                decrypted = this.crypter.decode(sb.toString(), prefix);
-//                            }
-//
-//                            for (String str: decrypted.split("\\n")) {  //System.lineSeparator()?
-//                                lvItems.add(str);
-//                            }
-//
-//                            this.logListView.setItems(lvItems);
-//                        }
+                        decrypted = this.crypter.decrypt(new String(data, codePage), new String(key, AppConfig.DEFAUL_ENCODING).toCharArray());
+                        decrypted = this.crypter.decode(this.crypter.decode(decrypted, key), prefix);
+                        if (! matchArrayBeginings(decrypted, keyPhrase)) {
+                            decrypted = this.crypter.decode(this.crypter.decode(data, key), prefix);
+                            if (! matchArrayBeginings(decrypted, keyPhrase)) {
+                                decrypted = this.crypter.decode(data, prefix);
+                            }
+                        }
+
+                        String str = new String(decrypted, codePage);
+
+                        ObservableList<String> lvItems = FXCollections.observableArrayList();
+                        for (String s : str.split(System.lineSeparator())) {
+                            lvItems.add(s);
+                        }
+
+                        this.textWin.getItems().clear();
+                        this.textWin.setItems(lvItems);
+
                         break;
                     case ("image/jpeg"):
-                        if (this.textOrImagePane.getChildren().contains(this.logListView)) {
-                            this.textOrImagePane.getChildren().remove(this.logListView);
+                        if (this.textOrImagePane.getChildren().contains(this.textWin)) {
+                            this.textOrImagePane.getChildren().remove(this.textWin);
                         }
-                        if (!this.textOrImagePane.getChildren().contains(this.logScrollPane)) {
-                            this.textOrImagePane.getChildren().add(this.logScrollPane);
-                        }
-
-                        BufferedImage bImage2;
-                        file = new File(this.currentFolder + "\\" + fileModel.getName());
-                        try (FileInputStream fis = new FileInputStream(file);) {
-                            BufferedInputStream bis = new BufferedInputStream(fis);
-                            byte[] data = new byte[(int) file.length()];
-                            bis.read(data);
-
-                            String key, keyPhrase, prefix, codePage;
-                            byte[] decrypted;
-                            if (!this.crypter.isInitialized()) {
-                                this.crypter.initialize();
-                            }
-                            key = this.crypter.decrypt(this.config.getProperty("Key", ""));
-                            prefix = this.crypter.decrypt(this.config.getProperty("Prefix", ""));
-                            keyPhrase = this.crypter.decrypt(this.config.getProperty("KeyPhrase", ""));
-                            codePage = this.config.getProperty("CodePage", "UTF-8");
-
-                            decrypted = this.crypter.decode(data, key.getBytes());
-
-                            Image img = new Image(new ByteArrayInputStream(decrypted));
-                            this.logImageView.setImage(img);
-
-                        } catch (IOException e) {
-                            // log error
+                        if (!this.textOrImagePane.getChildren().contains(this.imgWin)) {
+                            this.textOrImagePane.getChildren().add(this.imgWin);
                         }
 
-//                        Image img = new Image("file:" + this.currentFolder + "\\" + fileModel.getName());
-//                        this.logImageView.setImage(decrypted);
+                        decrypted = this.crypter.decode(data, key);
+
+                        Image img = new Image(new ByteArrayInputStream(decrypted));
+                        this.logImageView.setImage(img);
+
                         break;
                     default:
                         System.err.format("'%s' has an" + " unsupported filetype.%n", fileModel.getName());
@@ -291,6 +225,22 @@ public class MainController extends AbstractController implements Initializable 
 
             }
         }
+    }
+
+    private boolean matchArrayBeginings(byte[] largerArray, byte[] smallerArray) {
+        return Arrays.equals(smallerArray, Arrays.copyOfRange(largerArray, 0, smallerArray.length));
+    }
+
+    private byte[] readBytes(File file) {
+        byte[] data = new byte[(int) file.length()];
+        try (FileInputStream fis = new FileInputStream(file);) {
+            BufferedInputStream bis = new BufferedInputStream(fis);
+            bis.read(data);
+        } catch (IOException e) {
+            //TODO log error
+        }
+
+        return data;
     }
 
     @FXML

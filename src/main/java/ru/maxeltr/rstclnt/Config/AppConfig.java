@@ -43,10 +43,10 @@ import ru.maxeltr.rstclnt.Crypter;
  */
 @Configuration
 public class AppConfig {
-
+    public static final String DEFAUL_ENCODING = "UTF-8";
     public static final String CONFIG_PATHNAME = "Configuration.xml";
     public static final String CSS_PATHNAME = "/styles/Styles.css";
-    public static final byte[] SALT = "12345678".getBytes();
+    public static final byte[] SALT = {1, 2, 3, 4, 5, 6, 7, 8};
     public static final int ITERATION_COUNT = 4000;
     public static final int KEY_LENGTH = 128;
 

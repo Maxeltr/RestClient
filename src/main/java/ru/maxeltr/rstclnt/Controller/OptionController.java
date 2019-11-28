@@ -44,6 +44,7 @@ import javafx.stage.Stage;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import ru.maxeltr.rstclnt.Config.AppConfig;
 import ru.maxeltr.rstclnt.Config.Config;
 import ru.maxeltr.rstclnt.Crypter;
 
@@ -99,12 +100,16 @@ public class OptionController implements Initializable {
     }
 
     private void saveEncryptedSettings() {
-        if (! this.crypter.isInitialized()) {
+        if (!this.crypter.isInitialized()) {
             return;
         }
-        this.config.setProperty("Prefix", this.crypter.encrypt(this.prefixField.getText()));
-        this.config.setProperty("Key", this.crypter.encrypt(this.keyField.getText()));
-        this.config.setProperty("KeyPhrase", this.crypter.encrypt(this.keyPhraseField.getText()));
+        try {
+            this.config.setProperty("Prefix", this.crypter.encrypt(this.prefixField.getText().getBytes(AppConfig.DEFAUL_ENCODING)));
+            this.config.setProperty("Key", this.crypter.encrypt(this.keyField.getText().getBytes(AppConfig.DEFAUL_ENCODING)));
+            this.config.setProperty("KeyPhrase", this.crypter.encrypt(this.keyPhraseField.getText().getBytes(AppConfig.DEFAUL_ENCODING)));
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(OptionController.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     private void saveNonEncryptedSettings() {
@@ -112,18 +117,23 @@ public class OptionController implements Initializable {
     }
 
     private void getEncryptedSettings() {
-        if (! this.crypter.isInitialized()) {
-            if (! this.crypter.initialize()) {
+        if (!this.crypter.isInitialized()) {
+            if (!this.crypter.initialize()) {
                 return;
             }
         }
-        this.prefixField.setText(this.crypter.decrypt(this.config.getProperty("Prefix", "")));
-        this.keyField.setText(this.crypter.decrypt(this.config.getProperty("Key", "")));
-        this.keyPhraseField.setText(this.crypter.decrypt(this.config.getProperty("KeyPhrase", "")));
+
+        try {
+            this.prefixField.setText(new String(this.crypter.decrypt(this.config.getProperty("Prefix", "")), AppConfig.DEFAUL_ENCODING));
+            this.keyField.setText(new String(this.crypter.decrypt(this.config.getProperty("Key", "")), AppConfig.DEFAUL_ENCODING));
+        this.keyPhraseField.setText(new String(this.crypter.decrypt(this.config.getProperty("KeyPhrase", "")), AppConfig.DEFAUL_ENCODING));
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(OptionController.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     private void getNonEncryptedSettings() {
-        this.codePageField.setText(this.config.getProperty("CodePage", ""));
+        this.codePageField.setText(this.config.getProperty("CodePage", AppConfig.DEFAUL_ENCODING));
     }
 
     @FXML
