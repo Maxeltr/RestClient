@@ -13,6 +13,7 @@
                     <items>
                         <MenuItem fx:id="menuChooseFolder" mnemonicParsing="false" onAction="#handleChooseFolder" text="Choose folder" />
                         <MenuItem fx:id="menuOpenFile" mnemonicParsing="false" onAction="#handleButtonAction" text="Open file" />
+                        <MenuItem fx:id="menuEncipherFile" mnemonicParsing="false" onAction="#handleEncipherFile" text="Encipher file" />
                         <MenuItem fx:id="menuAddToArchive" mnemonicParsing="false" onAction="#handleButtonAction" text="Add to archive" />
                         <MenuItem fx:id="menuExit" mnemonicParsing="false" onAction="#handleExit" text="Exit" />
                     </items>

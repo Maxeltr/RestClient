@@ -17,11 +17,16 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Group;
@@ -41,12 +46,14 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.ScrollEvent;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javax.imageio.ImageIO;
 import ru.maxeltr.rstclnt.Config.AppConfig;
 import ru.maxeltr.rstclnt.Config.Config;
 import ru.maxeltr.rstclnt.Crypter;
 import ru.maxeltr.rstclnt.Model.FileModel;
+import org.springframework.web.client.RestTemplate;
 
 public class MainController extends AbstractController implements Initializable {
 
@@ -121,6 +128,40 @@ public class MainController extends AbstractController implements Initializable 
             }
             event.consume();
         });
+
+        if (!this.crypter.isInitialized()) {
+            this.crypter.initialize();
+        }
+
+        if (this.crypter.isInitialized()) {
+            String dir = this.crypter.decrypt(this.config.getProperty("LogDir", "")).toString();
+            this.currentFolder = new File(dir);
+            try {
+                this.fileTable.setItems(this.makeFileList(this.currentFolder));
+            } catch (IOException ex) {
+                Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+        }
+    }
+
+    @FXML
+    private void handleEncipherFile(ActionEvent event) throws UnsupportedEncodingException, IOException {
+        FileChooser chooser = new FileChooser();
+        Window stage = (Stage) root.getScene().getWindow();
+        File file = chooser.showOpenDialog(stage);
+        if (file == null) {
+            return;
+        }
+
+        byte[] data = this.readBytes(file);
+        if (!this.crypter.isInitialized()) {
+            this.crypter.initialize();
+        }
+        byte[] key = this.crypter.decrypt(this.config.getProperty("Key", ""));
+        String encrypted = this.crypter.encrypt(data, new String(key, AppConfig.DEFAULT_ENCODING).toCharArray());
+        Path filePath = Paths.get(file.getPath());
+        Files.write(filePath, encrypted.getBytes(AppConfig.DEFAULT_ENCODING));
     }
 
     @FXML
@@ -132,10 +173,16 @@ public class MainController extends AbstractController implements Initializable 
             this.fileTable.getItems().clear();
             this.textWin.getItems().clear();
             this.logImageView.setImage(null);
-            File[] files = currentFolder.listFiles((File dir, String name1) -> name1.toLowerCase().endsWith(".log") || name1.toLowerCase().endsWith(".jpg"));
+            this.fileTable.setItems(this.makeFileList(this.currentFolder));
+        }
+    }
+
+    private ObservableList makeFileList(File folder) throws IOException {
+        ObservableList<FileModel> items = FXCollections.observableArrayList();
+        File[] files = folder.listFiles((File dir, String name1) -> name1.toLowerCase().endsWith(".log") || name1.toLowerCase().endsWith(".jpg"));
+        if (files != null) {
             SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
             String fileType, fileName;
-            ObservableList<FileModel> items = FXCollections.observableArrayList();
             for (File file : files) {
                 fileName = file.getName();
                 fileType = Files.probeContentType(file.toPath());
@@ -143,87 +190,103 @@ public class MainController extends AbstractController implements Initializable 
                     if (fileName.toLowerCase().endsWith(".log")) {
                         fileType = "text/plain";
                     } else {
-                        System.err.format("'%s' has an" + " unknown filetype.%n", file.toPath());
+                        Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("%s has an unknown filetype.", file.toPath()));
                         continue;
                     }
                 } else {
                     if (!fileType.equals("image/jpeg") && !fileType.equals("text/plain")) {
-                        System.err.format("'%s' has an" + " unsupported filetype.%n", file.toPath());
+                        Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("'%s' has an" + " unsupported filetype.%n", file.toPath()));
                         continue;
                     }
                 }
                 items.add(new FileModel(fileName, sdf.format(file.lastModified()), "" + file.length(), fileType));
             }
-            this.fileTable.setItems(items);
         }
+
+        return items;
     }
 
     @FXML
-    private void handleFileTableClicked(MouseEvent event) throws FileNotFoundException, IOException {
+    private void handleFileTableClicked(MouseEvent event) throws UnsupportedEncodingException {
         if (event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 2) {
             FileModel fileModel = this.fileTable.getSelectionModel().getSelectedItem();
-            if (fileModel != null) {
-                File file = new File(this.currentFolder + "\\" + fileModel.getName());
-                byte[] data = this.readBytes(file);
-
-                if (!this.crypter.isInitialized()) {
-                    this.crypter.initialize();
-                }
-                byte[] key, keyPhrase, prefix, decrypted;
-                String codePage;
-                key = this.crypter.decrypt(this.config.getProperty("Key", ""));
-                prefix = this.crypter.decrypt(this.config.getProperty("Prefix", ""));
-                keyPhrase = this.crypter.decrypt(this.config.getProperty("KeyPhrase", ""));
-                codePage = this.config.getProperty("CodePage", "UTF-8");
-
-                switch (fileModel.getType()) {
-                    case ("text/plain"):
-                        if (this.textOrImagePane.getChildren().contains(this.imgWin)) {
-                            this.textOrImagePane.getChildren().remove(this.imgWin);
-                        }
-                        if (!this.textOrImagePane.getChildren().contains(this.textWin)) {
-                            this.textOrImagePane.getChildren().add(this.textWin);
-                        }
-
-                        decrypted = this.crypter.decrypt(new String(data, codePage), new String(key, AppConfig.DEFAUL_ENCODING).toCharArray());
-                        decrypted = this.crypter.decode(this.crypter.decode(decrypted, key), prefix);
-                        if (! matchArrayBeginings(decrypted, keyPhrase)) {
-                            decrypted = this.crypter.decode(this.crypter.decode(data, key), prefix);
-                            if (! matchArrayBeginings(decrypted, keyPhrase)) {
-                                decrypted = this.crypter.decode(data, prefix);
-                            }
-                        }
-
-                        String str = new String(decrypted, codePage);
-
-                        ObservableList<String> lvItems = FXCollections.observableArrayList();
-                        for (String s : str.split(System.lineSeparator())) {
-                            lvItems.add(s);
-                        }
-
-                        this.textWin.getItems().clear();
-                        this.textWin.setItems(lvItems);
-
-                        break;
-                    case ("image/jpeg"):
-                        if (this.textOrImagePane.getChildren().contains(this.textWin)) {
-                            this.textOrImagePane.getChildren().remove(this.textWin);
-                        }
-                        if (!this.textOrImagePane.getChildren().contains(this.imgWin)) {
-                            this.textOrImagePane.getChildren().add(this.imgWin);
-                        }
-
-                        decrypted = this.crypter.decode(data, key);
-
-                        Image img = new Image(new ByteArrayInputStream(decrypted));
-                        this.logImageView.setImage(img);
-
-                        break;
-                    default:
-                        System.err.format("'%s' has an" + " unsupported filetype.%n", fileModel.getName());
-                }
-
+            if (fileModel == null || this.currentFolder == null) {
+                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Current folder or file model is null.%n"));
+                return;
             }
+            File file = new File(this.currentFolder + "\\" + fileModel.getName());  //TODO file not found
+            byte[] data = this.readBytes(file);
+            if (data.length == 0) {
+                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Cannot read file: %s.%n", this.currentFolder + "\\" + fileModel.getName()));
+                return;
+            }
+
+            if (!this.crypter.isInitialized()) {
+                this.crypter.initialize();
+            }
+            byte[] key, keyPhrase, prefix, decrypted;
+            String codePage;
+            key = this.crypter.decrypt(this.config.getProperty("Key", ""));
+            prefix = this.crypter.decrypt(this.config.getProperty("Prefix", ""));
+            keyPhrase = this.crypter.decrypt(this.config.getProperty("KeyPhrase", ""));
+            codePage = this.config.getProperty("CodePage", AppConfig.DEFAULT_ENCODING);
+
+            switch (fileModel.getType()) {
+                case ("text/plain"):
+                    if (this.textOrImagePane.getChildren().contains(this.imgWin)) {
+                        this.textOrImagePane.getChildren().remove(this.imgWin);
+                    }
+                    if (!this.textOrImagePane.getChildren().contains(this.textWin)) {
+                        this.textOrImagePane.getChildren().add(this.textWin);
+                    }
+
+//                    try() {
+                    decrypted = this.crypter.decrypt(new String(data, AppConfig.DEFAULT_ENCODING), new String(key, AppConfig.DEFAULT_ENCODING).toCharArray());
+//                    } catch (IOException ex) {
+
+//                    }
+
+                    decrypted = this.crypter.decode(this.crypter.decode(decrypted, key), prefix);
+                    if (!matchArrayBeginings(decrypted, keyPhrase)) {
+                        decrypted = this.crypter.decode(this.crypter.decode(data, key), prefix);
+                        if (!matchArrayBeginings(decrypted, keyPhrase)) {
+                            decrypted = this.crypter.decode(data, prefix);
+                        }
+                    }
+
+                    String str = new String(decrypted, codePage);
+
+                    ObservableList<String> lvItems = FXCollections.observableArrayList();
+                    for (String s : str.split(System.lineSeparator())) {
+                        lvItems.add(s);
+                    }
+
+                    this.textWin.getItems().clear();
+                    this.textWin.setItems(lvItems);
+
+                    break;
+                case ("image/jpeg"):
+                    if (this.textOrImagePane.getChildren().contains(this.textWin)) {
+                        this.textOrImagePane.getChildren().remove(this.textWin);
+                    }
+                    if (!this.textOrImagePane.getChildren().contains(this.imgWin)) {
+                        this.textOrImagePane.getChildren().add(this.imgWin);
+                    }
+
+                    decrypted = this.crypter.decrypt(new String(data, AppConfig.DEFAULT_ENCODING), new String(key, AppConfig.DEFAULT_ENCODING).toCharArray());
+                    decrypted = this.crypter.decode(decrypted, key);
+
+                    Image img = new Image(new ByteArrayInputStream(decrypted));
+                    if (img.isError()) {
+                        decrypted = this.crypter.decode(data, key);
+                    }
+                    this.logImageView.setImage(img);
+
+                    break;
+                default:
+                    Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("%s has an unsupported file type.%n", this.currentFolder + "\\" + fileModel.getName()));
+            }
+
         }
     }
 
@@ -233,11 +296,12 @@ public class MainController extends AbstractController implements Initializable 
 
     private byte[] readBytes(File file) {
         byte[] data = new byte[(int) file.length()];
-        try (FileInputStream fis = new FileInputStream(file);) {
+        try ( FileInputStream fis = new FileInputStream(file);) {
             BufferedInputStream bis = new BufferedInputStream(fis);
             bis.read(data);
-        } catch (IOException e) {
-            //TODO log error
+        } catch (IOException ex) {
+            Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, String.format("Cannot open or read %s.%n", file.toString(), ex));
+            data = new byte[0];
         }
 
         return data;
@@ -253,6 +317,7 @@ public class MainController extends AbstractController implements Initializable 
 
     @FXML
     private void handleButtonAction(ActionEvent event) {
+        RestTemplate restTemplate = new RestTemplate();
         this.messsageNotImplemented();
     }
 
