@@ -23,32 +23,34 @@
  */
 package ru.maxeltr.rstclnt.Model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import javafx.beans.property.SimpleStringProperty;
 
 /**
  *
  * @author Maxim Eltratov <Maxim.Eltratov@yandex.ru>
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class FileModel {
 
-    private SimpleStringProperty name;
+    private SimpleStringProperty filename;
     private SimpleStringProperty date;
     private SimpleStringProperty size;
     private SimpleStringProperty type;
 
-    public FileModel(String name, String date, String size, String type) {
-        this.name = new SimpleStringProperty(name);
+    public FileModel(String filename, String date, String size, String type) {
+        this.filename = new SimpleStringProperty(filename);
         this.date = new SimpleStringProperty(date);
         this.size = new SimpleStringProperty(size);
         this.type = new SimpleStringProperty(type);
     }
 
-    public String getName() {
-        return this.name.get();
+    public String getFilename() {
+        return this.filename.get();
     }
 
-    public void setName(String name) {
-        this.name = new SimpleStringProperty(name);
+    public void setFilename(String filename) {
+        this.filename = new SimpleStringProperty(filename);
     }
 
     public String getDate() {

@@ -23,6 +23,7 @@
  */
 package ru.maxeltr.rstclnt.Config;
 
+import Service.FileService;
 import java.io.IOException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
@@ -50,6 +51,9 @@ public class AppConfig {
     public static final int ITERATION_COUNT = 4000;
     public static final int KEY_LENGTH = 128;
 
+    public static final String URL_GET_FILES = "http://176.113.82.112/v1/api/tag";
+    public static final String URL_GET_FILE = "http://176.113.82.112/v1/api/file/{id}";
+
     @Bean
     public Config config() {
         return new Config(CONFIG_PATHNAME);
@@ -61,13 +65,18 @@ public class AppConfig {
     }
 
     @Bean
+    public FileService fileService(Config config, Crypter crypter) {
+        return new FileService(config, crypter);
+    }
+
+    @Bean
     public OptionController optionController(Config config, Crypter crypter) {
         return new OptionController(config, crypter);
     }
 
     @Bean
-    public MainController mainController(OptionController optionController, Crypter crypter, Config config) {
-        return new MainController(optionController, crypter, config);
+    public MainController mainController(FileService fileService, OptionController optionController, Crypter crypter, Config config) {
+        return new MainController(fileService, optionController, crypter, config);
     }
 
     @Bean

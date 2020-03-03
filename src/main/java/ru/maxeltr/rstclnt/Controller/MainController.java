@@ -1,5 +1,6 @@
 package ru.maxeltr.rstclnt.Controller;
 
+import Service.FileService;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -64,7 +65,7 @@ public class MainController extends AbstractController implements Initializable 
     private TableView<FileModel> fileTable;
 
     @FXML
-    private TableColumn<FileModel, Integer> name;
+    private TableColumn<FileModel, Integer> filename;
 
     @FXML
     private TableColumn<FileModel, String> date;
@@ -91,10 +92,12 @@ public class MainController extends AbstractController implements Initializable 
     private final double SCALE_MAX = 5;
 
     private final OptionController optionController;
+    private final FileService fileService;
     private final Crypter crypter;
     private final Config config;
 
-    public MainController(OptionController optionController, Crypter crypter, Config config) {
+    public MainController(FileService fileService, OptionController optionController, Crypter crypter, Config config) {
+        this.fileService = fileService;
         this.optionController = optionController;
         this.config = config;
         this.crypter = crypter;
@@ -102,7 +105,7 @@ public class MainController extends AbstractController implements Initializable 
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        name.setCellValueFactory(new PropertyValueFactory<>("name"));
+        filename.setCellValueFactory(new PropertyValueFactory<>("filename"));
         date.setCellValueFactory(new PropertyValueFactory<>("date"));
         size.setCellValueFactory(new PropertyValueFactory<>("size"));
         type.setCellValueFactory(new PropertyValueFactory<>("type"));
@@ -214,10 +217,14 @@ public class MainController extends AbstractController implements Initializable 
                 Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Current folder or file model is null.%n"));
                 return;
             }
-            File file = new File(this.currentFolder + "\\" + fileModel.getName());  //TODO file not found
+            File file = new File(this.currentFolder, fileModel.getFilename());  //TODO file not found
+            if (!file.exists()) {                                                 //add
+                this.messsageNotImplemented(); //download in thread
+            }
+
             byte[] data = this.readBytes(file);
             if (data.length == 0) {
-                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Cannot read file: %s.%n", this.currentFolder + "\\" + fileModel.getName()));
+                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Cannot read file: %s.%n", this.currentFolder + "\\" + fileModel.getFilename()));
                 return;
             }
 
@@ -233,19 +240,13 @@ public class MainController extends AbstractController implements Initializable 
 
             switch (fileModel.getType()) {
                 case ("text/plain"):
-                    if (this.textOrImagePane.getChildren().contains(this.imgWin)) {
-                        this.textOrImagePane.getChildren().remove(this.imgWin);
-                    }
-                    if (!this.textOrImagePane.getChildren().contains(this.textWin)) {
-                        this.textOrImagePane.getChildren().add(this.textWin);
-                    }
+                    this.changeToTexWin();
 
 //                    try() {
                     decrypted = this.crypter.decrypt(new String(data, AppConfig.DEFAULT_ENCODING), new String(key, AppConfig.DEFAULT_ENCODING).toCharArray());
 //                    } catch (IOException ex) {
 
 //                    }
-
                     decrypted = this.crypter.decode(this.crypter.decode(decrypted, key), prefix);
                     if (!matchArrayBeginings(decrypted, keyPhrase)) {
                         decrypted = this.crypter.decode(this.crypter.decode(data, key), prefix);
@@ -266,12 +267,7 @@ public class MainController extends AbstractController implements Initializable 
 
                     break;
                 case ("image/jpeg"):
-                    if (this.textOrImagePane.getChildren().contains(this.textWin)) {
-                        this.textOrImagePane.getChildren().remove(this.textWin);
-                    }
-                    if (!this.textOrImagePane.getChildren().contains(this.imgWin)) {
-                        this.textOrImagePane.getChildren().add(this.imgWin);
-                    }
+                    this.changeToImgWin();
 
                     decrypted = this.crypter.decrypt(new String(data, AppConfig.DEFAULT_ENCODING), new String(key, AppConfig.DEFAULT_ENCODING).toCharArray());
                     decrypted = this.crypter.decode(decrypted, key);
@@ -279,14 +275,33 @@ public class MainController extends AbstractController implements Initializable 
                     Image img = new Image(new ByteArrayInputStream(decrypted));
                     if (img.isError()) {
                         decrypted = this.crypter.decode(data, key);
+                        img = new Image(new ByteArrayInputStream(decrypted));
                     }
                     this.logImageView.setImage(img);
 
                     break;
                 default:
-                    Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("%s has an unsupported file type.%n", this.currentFolder + "\\" + fileModel.getName()));
+                    Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("%s has an unsupported file type.%n", this.currentFolder + "\\" + fileModel.getFilename()));
             }
 
+        }
+    }
+
+    private void changeToTexWin() {
+        if (this.textOrImagePane.getChildren().contains(this.imgWin)) {
+            this.textOrImagePane.getChildren().remove(this.imgWin);
+        }
+        if (!this.textOrImagePane.getChildren().contains(this.textWin)) {
+            this.textOrImagePane.getChildren().add(this.textWin);
+        }
+    }
+
+    private void changeToImgWin() {
+        if (this.textOrImagePane.getChildren().contains(this.textWin)) {
+            this.textOrImagePane.getChildren().remove(this.textWin);
+        }
+        if (!this.textOrImagePane.getChildren().contains(this.imgWin)) {
+            this.textOrImagePane.getChildren().add(this.imgWin);
         }
     }
 
@@ -296,7 +311,7 @@ public class MainController extends AbstractController implements Initializable 
 
     private byte[] readBytes(File file) {
         byte[] data = new byte[(int) file.length()];
-        try ( FileInputStream fis = new FileInputStream(file);) {
+        try (FileInputStream fis = new FileInputStream(file);) {
             BufferedInputStream bis = new BufferedInputStream(fis);
             bis.read(data);
         } catch (IOException ex) {
@@ -318,7 +333,9 @@ public class MainController extends AbstractController implements Initializable 
     @FXML
     private void handleButtonAction(ActionEvent event) {
         RestTemplate restTemplate = new RestTemplate();
-        this.messsageNotImplemented();
+        String files = restTemplate.getForObject(AppConfig.URL_GET_FILES, String.class);
+
+        Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, files);
     }
 
     @FXML

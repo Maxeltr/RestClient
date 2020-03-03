@@ -36,7 +36,7 @@
                     <children>
                         <TableView fx:id="fileTable" editable="true" layoutX="28.0" layoutY="-18.0" onMouseClicked="#handleFileTableClicked" prefHeight="160.0" prefWidth="219.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                             <columns>
-                                <TableColumn fx:id="name" prefWidth="150.0" text="Name" />
+                                <TableColumn fx:id="filename" prefWidth="150.0" text="Name" />
                                 <TableColumn fx:id="date" prefWidth="75.0" text="Date" />
                                 <TableColumn fx:id="size" prefWidth="75.0" text="Size" />
                                 <TableColumn fx:id="type" prefWidth="75.0" text="Type" />
