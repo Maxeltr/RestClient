@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package Service;
+package ru.maxeltr.rstclnt.Service;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -48,7 +48,7 @@ import ru.maxeltr.rstclnt.Model.FileModel;
 
 public class FileService {
 
-    private File currentFolder;
+    private File currentLogDir;
 
     private final Crypter crypter;
 
@@ -57,9 +57,20 @@ public class FileService {
     public FileService(Config config, Crypter crypter) {
         this.config = config;
         this.crypter = crypter;
+
+        if (!this.crypter.isInitialized()) {
+            this.crypter.initialize();
+        }
+
+        if (this.crypter.isInitialized()) {
+            String dir = this.crypter.decrypt(this.config.getProperty("LogDir", "")).toString();
+            this.currentLogDir = new File(dir);
+        } else {
+            this.currentLogDir = new File(System.getProperty("user.home"));
+        }
     }
 
-    private void encipherFile(File file) throws UnsupportedEncodingException, IOException {
+    public void encipherFile(File file) throws UnsupportedEncodingException, IOException {
         byte[] data = this.readBytes(file);
         if (!this.crypter.isInitialized()) {
             this.crypter.initialize();
@@ -70,37 +81,43 @@ public class FileService {
         Files.write(filePath, encrypted.getBytes(AppConfig.DEFAULT_ENCODING));
     }
 
-    public File getCurrentFolder() {
-        return this.currentFolder;
+    public File getCurrentLogDir() {
+        return this.currentLogDir;
     }
 
-    public void setCurrentFolder(File folder) {
-        this.currentFolder = folder;
+    public FileService setCurrentLogDir(File folder) {
+        this.currentLogDir = folder;
+
+        return this;
     }
 
-    public ObservableList<FileModel> getLocalFiles() throws IOException {
+    public ObservableList<FileModel> getLocalFiles() {
         ObservableList<FileModel> items = FXCollections.observableArrayList();
-        File[] files = this.currentFolder.listFiles((File dir, String name1) -> name1.toLowerCase().endsWith(".log") || name1.toLowerCase().endsWith(".jpg"));
+        File[] files = this.currentLogDir.listFiles((File dir, String name1) -> name1.toLowerCase().endsWith(".log") || name1.toLowerCase().endsWith(".jpg"));
         if (files != null) {
             SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
             String fileType, fileName;
             for (File file : files) {
-                fileName = file.getName();
-                fileType = Files.probeContentType(file.toPath());
-                if (fileType == null) {
-                    if (fileName.toLowerCase().endsWith(".log")) {
-                        fileType = "text/plain";
+                try {
+                    fileName = file.getName();
+                    fileType = Files.probeContentType(file.toPath());
+                    if (fileType == null) {
+                        if (fileName.toLowerCase().endsWith(".log")) {
+                            fileType = "text/plain";
+                        } else {
+                            Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("%s has an unknown filetype.", file.toPath()));
+                            continue;
+                        }
                     } else {
-                        Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("%s has an unknown filetype.", file.toPath()));
-                        continue;
+                        if (!fileType.equals("image/jpeg") && !fileType.equals("text/plain")) {
+                            Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("'%s' has an" + " unsupported filetype.%n", file.toPath()));
+                            continue;
+                        }
                     }
-                } else {
-                    if (!fileType.equals("image/jpeg") && !fileType.equals("text/plain")) {
-                        Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("'%s' has an" + " unsupported filetype.%n", file.toPath()));
-                        continue;
-                    }
+                    items.add(new FileModel(fileName, sdf.format(file.lastModified()), "" + file.length(), fileType));
+                } catch (IOException ex) {
+                    Logger.getLogger(FileService.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                items.add(new FileModel(fileName, sdf.format(file.lastModified()), "" + file.length(), fileType));
             }
         }
 
@@ -108,14 +125,14 @@ public class FileService {
     }
 
     public byte[] getText(FileModel fileModel) throws UnsupportedEncodingException {
-        File file = new File(this.currentFolder, fileModel.getFilename());
+        File file = new File(this.currentLogDir, fileModel.getFilename());
         if (!file.exists()) {
             this.messsageNotImplemented();      //download in thread?
         }
 
         byte[] data = this.readBytes(file);
         if (data.length == 0) {
-            Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("Cannot read file: %s.%n", this.currentFolder + "\\" + fileModel.getFilename()));
+            Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("Cannot read file: %s.%n", this.currentLogDir + "\\" + fileModel.getFilename()));
             //return;
         }
 
@@ -141,14 +158,14 @@ public class FileService {
     }
 
     public Image getImage(FileModel fileModel) throws UnsupportedEncodingException {
-        File file = new File(this.currentFolder, fileModel.getFilename());
+        File file = new File(this.currentLogDir, fileModel.getFilename());
         if (!file.exists()) {
             this.messsageNotImplemented();      //download in thread
         }
 
         byte[] data = this.readBytes(file);
         if (data.length == 0) {
-            Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("Cannot read file: %s.%n", this.currentFolder + "\\" + fileModel.getFilename()));
+            Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("Cannot read file: %s.%n", this.currentLogDir + "\\" + fileModel.getFilename()));
             //return;
         }
 
@@ -186,19 +203,6 @@ public class FileService {
         }
 
         return data;
-    }
-
-    private ObservableList<FileModel> getRemoteFiles() {
-        ObservableList<FileModel> items = FXCollections.observableArrayList();
-
-        RestTemplate restTemplate = new RestTemplate();
-        FileModel[] files = restTemplate.getForObject(AppConfig.URL_GET_FILES, FileModel[].class);
-
-        for (FileModel file : files) {
-            items.add(file);
-        }
-
-        return items;
     }
 
     private void messsageNotImplemented() {

@@ -73,6 +73,15 @@ public class OptionController implements Initializable {
     private TextField logDirField;
 
     @FXML
+    private TextField clientSecretField;
+
+    @FXML
+    private TextField clientIdField;
+
+    @FXML
+    private TextField grantTypesField;
+
+    @FXML
     private Button cancelOptionsButton;
 
     @FXML
@@ -104,13 +113,19 @@ public class OptionController implements Initializable {
 
     private void saveEncryptedSettings() {
         if (!this.crypter.isInitialized()) {
-            return;
+            if (!this.crypter.initialize()) {
+                return;
+            }
         }
+
         try {
             this.config.setProperty("Prefix", this.crypter.encrypt(this.prefixField.getText().getBytes(AppConfig.DEFAULT_ENCODING)));
             this.config.setProperty("Key", this.crypter.encrypt(this.keyField.getText().getBytes(AppConfig.DEFAULT_ENCODING)));
             this.config.setProperty("KeyPhrase", this.crypter.encrypt(this.keyPhraseField.getText().getBytes(AppConfig.DEFAULT_ENCODING)));
             this.config.setProperty("LogDir", this.crypter.encrypt(this.logDirField.getText().getBytes(AppConfig.DEFAULT_ENCODING)));
+            this.config.setProperty("ClientSecret", this.crypter.encrypt(this.clientSecretField.getText().getBytes(AppConfig.DEFAULT_ENCODING)));
+            this.config.setProperty("ClientId", this.crypter.encrypt(this.clientIdField.getText().getBytes(AppConfig.DEFAULT_ENCODING)));
+            this.config.setProperty("GrantTypes", this.crypter.encrypt(this.grantTypesField.getText().getBytes(AppConfig.DEFAULT_ENCODING)));
         } catch (UnsupportedEncodingException ex) {
             Logger.getLogger(OptionController.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -132,6 +147,9 @@ public class OptionController implements Initializable {
             this.keyField.setText(new String(this.crypter.decrypt(this.config.getProperty("Key", "")), AppConfig.DEFAULT_ENCODING));
             this.keyPhraseField.setText(new String(this.crypter.decrypt(this.config.getProperty("KeyPhrase", "")), AppConfig.DEFAULT_ENCODING));
             this.logDirField.setText(new String(this.crypter.decrypt(this.config.getProperty("LogDir", "")), AppConfig.DEFAULT_ENCODING));
+            this.clientSecretField.setText(new String(this.crypter.decrypt(this.config.getProperty("ClientSecret", "")), AppConfig.DEFAULT_ENCODING));
+            this.clientIdField.setText(new String(this.crypter.decrypt(this.config.getProperty("ClientId", "")), AppConfig.DEFAULT_ENCODING));
+            this.grantTypesField.setText(new String(this.crypter.decrypt(this.config.getProperty("GrantTypes", "")), AppConfig.DEFAULT_ENCODING));
         } catch (UnsupportedEncodingException ex) {
             Logger.getLogger(OptionController.class.getName()).log(Level.SEVERE, null, ex);
         }

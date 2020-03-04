@@ -33,6 +33,7 @@ import javafx.beans.property.SimpleStringProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class FileModel {
 
+    private SimpleStringProperty fileId;
     private SimpleStringProperty filename;
     private SimpleStringProperty date;
     private SimpleStringProperty size;
@@ -43,6 +44,14 @@ public class FileModel {
         this.date = new SimpleStringProperty(date);
         this.size = new SimpleStringProperty(size);
         this.type = new SimpleStringProperty(type);
+    }
+
+    public String getFileId() {
+        return this.fileId.get();
+    }
+
+    public void setFileId(String fileId) {
+        this.fileId = new SimpleStringProperty(fileId);
     }
 
     public String getFilename() {

@@ -23,7 +23,7 @@
  */
 package ru.maxeltr.rstclnt.Config;
 
-import Service.FileService;
+import ru.maxeltr.rstclnt.Service.FileService;
 import java.io.IOException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
@@ -37,6 +37,7 @@ import ru.maxeltr.rstclnt.Controller.MainController;
 import ru.maxeltr.rstclnt.Controller.OptionController;
 import ru.maxeltr.rstclnt.Controller.PinController;
 import ru.maxeltr.rstclnt.Crypter;
+import ru.maxeltr.rstclnt.Service.RestService;
 
 /**
  *
@@ -51,7 +52,7 @@ public class AppConfig {
     public static final int ITERATION_COUNT = 4000;
     public static final int KEY_LENGTH = 128;
 
-    public static final String URL_GET_FILES = "http://176.113.82.112/v1/api/tag";
+    public static final String URL_GET_FILES = "http://176.113.82.112/v1/api/file";
     public static final String URL_GET_FILE = "http://176.113.82.112/v1/api/file/{id}";
 
     @Bean
@@ -70,13 +71,18 @@ public class AppConfig {
     }
 
     @Bean
+    public RestService restService(Config config, Crypter crypter) {
+        return new RestService(config, crypter);
+    }
+
+    @Bean
     public OptionController optionController(Config config, Crypter crypter) {
         return new OptionController(config, crypter);
     }
 
     @Bean
-    public MainController mainController(FileService fileService, OptionController optionController, Crypter crypter, Config config) {
-        return new MainController(fileService, optionController, crypter, config);
+    public MainController mainController(FileService fileService, RestService restService, OptionController optionController, Config config) {
+        return new MainController(fileService, restService, optionController, config);
     }
 
     @Bean

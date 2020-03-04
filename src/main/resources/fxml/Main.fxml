@@ -18,6 +18,11 @@
                         <MenuItem fx:id="menuExit" mnemonicParsing="false" onAction="#handleExit" text="Exit" />
                     </items>
                 </Menu>
+                <Menu fx:id="menuServer" mnemonicParsing="false" text="Server">
+                    <items>
+                        <MenuItem fx:id="menuConnect" mnemonicParsing="false" onAction="#handleConnect" text="Connect" />
+                    </items>
+                </Menu>
                 <Menu fx:id="menuConfiguration" mnemonicParsing="false" text="Configuration">
                     <items>
                         <MenuItem fx:id="menuSetting" mnemonicParsing="false" onAction="#handleMenuSettings" text="Settings" />
