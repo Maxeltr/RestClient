@@ -114,7 +114,12 @@ public class FileService {
                             continue;
                         }
                     }
-                    items.add(new FileModel(fileName, sdf.format(file.lastModified()), "" + file.length(), fileType));
+                    FileModel fileModel = new FileModel();
+                    fileModel.setFilename(fileName);
+                    fileModel.setDate(sdf.format(file.lastModified()));
+                    fileModel.setSize("" + file.length());
+                    fileModel.setType(fileType);
+                    items.add(fileModel);
                 } catch (IOException ex) {
                     Logger.getLogger(FileService.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -127,13 +132,13 @@ public class FileService {
     public byte[] getText(FileModel fileModel) throws UnsupportedEncodingException {
         File file = new File(this.currentLogDir, fileModel.getFilename());
         if (!file.exists()) {
-            this.messsageNotImplemented();      //download in thread?
+            return new byte[0];
         }
 
         byte[] data = this.readBytes(file);
         if (data.length == 0) {
             Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("Cannot read file: %s.%n", this.currentLogDir + "\\" + fileModel.getFilename()));
-            //return;
+            return data;
         }
 
         if (!this.crypter.isInitialized()) {
@@ -160,13 +165,13 @@ public class FileService {
     public Image getImage(FileModel fileModel) throws UnsupportedEncodingException {
         File file = new File(this.currentLogDir, fileModel.getFilename());
         if (!file.exists()) {
-            this.messsageNotImplemented();      //download in thread
+            //throw exception
         }
 
         byte[] data = this.readBytes(file);
         if (data.length == 0) {
             Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("Cannot read file: %s.%n", this.currentLogDir + "\\" + fileModel.getFilename()));
-            //return;
+            //throw exception
         }
 
         if (!this.crypter.isInitialized()) {

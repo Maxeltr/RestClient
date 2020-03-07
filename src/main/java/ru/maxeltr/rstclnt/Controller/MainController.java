@@ -195,8 +195,12 @@ public class MainController extends AbstractController implements Initializable 
                 case ("image/jpeg"):
                     this.changeToImgWin();
 
-                    Image img = this.fileService.getImage(fileModel);
-                    this.logImageView.setImage(img);
+                    try {
+                        Image img = this.fileService.getImage(fileModel);
+                        this.logImageView.setImage(img);
+                    } catch (Exception ex) {
+                        Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
+                    }
 
                     break;
                 default:

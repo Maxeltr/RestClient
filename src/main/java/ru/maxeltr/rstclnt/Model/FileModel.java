@@ -24,6 +24,8 @@
 package ru.maxeltr.rstclnt.Model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Map;
 import javafx.beans.property.SimpleStringProperty;
 
 /**
@@ -33,17 +35,24 @@ import javafx.beans.property.SimpleStringProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class FileModel {
 
+    @JsonProperty("file_id")
     private SimpleStringProperty fileId;
     private SimpleStringProperty filename;
     private SimpleStringProperty date;
     private SimpleStringProperty size;
     private SimpleStringProperty type;
 
-    public FileModel(String filename, String date, String size, String type) {
-        this.filename = new SimpleStringProperty(filename);
-        this.date = new SimpleStringProperty(date);
-        this.size = new SimpleStringProperty(size);
-        this.type = new SimpleStringProperty(type);
+//    public FileModel(String filename, String date, String size, String type) {
+//        this.filename = new SimpleStringProperty(filename);
+//        this.date = new SimpleStringProperty(date);
+//        this.size = new SimpleStringProperty(size);
+//        this.type = new SimpleStringProperty(type);
+//    }
+
+    @JsonProperty("change_date")
+    private void unpackNestedChangeDate(Map<String,Object> changeDate) {
+        this.date = new SimpleStringProperty((String)changeDate.get("date"));
+
     }
 
     public String getFileId() {
