@@ -63,8 +63,13 @@ public class FileService {
         }
 
         if (this.crypter.isInitialized()) {
-            String dir = this.crypter.decrypt(this.config.getProperty("LogDir", "")).toString();
-            this.currentLogDir = new File(dir);
+            try {
+                String dir = new String(this.crypter.decrypt(this.config.getProperty("LogDir", "")), AppConfig.DEFAULT_ENCODING);
+                this.currentLogDir = new File(dir);
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(FileService.class.getName()).log(Level.SEVERE, null, ex);
+                this.currentLogDir = new File(System.getProperty("user.home"));
+            }
         } else {
             this.currentLogDir = new File(System.getProperty("user.home"));
         }

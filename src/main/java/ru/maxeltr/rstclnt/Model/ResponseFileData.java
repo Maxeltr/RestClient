@@ -63,8 +63,8 @@ public class ResponseFileData {
         this.lastPage = last.get("href");
     }
 
-//    public ResponseData() {
-//        this.file = new ArrayList<>();
+//    public void ResponseData() {
+//        this.fileList = new FileList();
 //
 //    }
 

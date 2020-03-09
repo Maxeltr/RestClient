@@ -23,9 +23,14 @@
  */
 package ru.maxeltr.rstclnt.Service;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Alert;
@@ -48,6 +53,11 @@ public class RestService {
 
     private final Config config;
 
+    private String accessToken = "";
+    private String expiresIn = "";
+    private String tokenType = "";
+    private String scope = "";
+
     public RestService(Config config, Crypter crypter) {
         this.config = config;
         this.crypter = crypter;
@@ -59,37 +69,53 @@ public class RestService {
 
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
-//        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", "Bearer " + this.getToken());
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
-//        ResponseEntity<FileModel> response = restTemplate.exchange(AppConfig.URL_GET_FILES, HttpMethod.GET, entity, FileModel.class);
-
-//        ResponseEntity<List<FileModelList>> response = restTemplate.exchange(AppConfig.URL_GET_FILES, HttpMethod.GET, entity, new ParameterizedTypeReference<List<FileModelList>>(){});
-//        List<FileModel> files = response.getBody();
-//
         ResponseEntity<ResponseFileData> response = restTemplate.exchange(AppConfig.URL_GET_FILES, HttpMethod.GET, entity, ResponseFileData.class);
         FileModel[] files = response.getBody().getFileList().getFiles();
-//
-        System.out.println(response.getBody());
 
-
-//        FileModel[] files = restTemplate.getForObject(AppConfig.URL_GET_FILES, FileModel[].class);
-//
-        for (FileModel file : files) {
-            System.out.println(file);
-            items.add(file);
-
-        }
-
+        items.addAll(Arrays.asList(files));
         return items;
     }
 
     public String getToken() {
-        String token = "e0b217df7aa46150f918e4e90e76861c48737d25";
+        if (!this.accessToken.isEmpty()) {
+            return this.accessToken;
+        }
 
-        return token;
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        if (this.crypter.isInitialized()) {
+
+            try {
+                Map<String, String> body = new HashMap<>();
+                body.put("grant_type", new String(this.crypter.decrypt(this.config.getProperty("GrantTypes", "")), AppConfig.DEFAULT_ENCODING));
+                body.put("client_secret", new String(this.crypter.decrypt(this.config.getProperty("ClientSecret", "")), AppConfig.DEFAULT_ENCODING));
+                body.put("client_id", new String(this.crypter.decrypt(this.config.getProperty("ClientId", "")), AppConfig.DEFAULT_ENCODING));
+
+                HttpEntity<Map> requestEntity = new HttpEntity<>(body, headers);
+
+                ResponseEntity<Map> response = restTemplate.exchange(AppConfig.URL_GET_TOKEN, HttpMethod.POST, requestEntity, Map.class);
+
+//                System.out.println(response.getBody());
+
+                this.accessToken = response.getBody().get("access_token").toString();
+                this.expiresIn = response.getBody().get("expires_in").toString();
+                this.tokenType = response.getBody().get("token_type").toString();
+                this.scope = response.getBody().get("scope").toString();
+
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+        }
+
+        return this.accessToken;
     }
 
     public String refreshToken() {
