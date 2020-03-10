@@ -36,7 +36,7 @@ import org.springframework.context.annotation.Configuration;
 import ru.maxeltr.rstclnt.Controller.MainController;
 import ru.maxeltr.rstclnt.Controller.OptionController;
 import ru.maxeltr.rstclnt.Controller.PinController;
-import ru.maxeltr.rstclnt.Crypter;
+import ru.maxeltr.rstclnt.Service.Crypter;
 import ru.maxeltr.rstclnt.Service.RestService;
 
 /**

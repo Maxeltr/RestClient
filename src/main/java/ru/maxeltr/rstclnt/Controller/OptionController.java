@@ -46,7 +46,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import ru.maxeltr.rstclnt.Config.AppConfig;
 import ru.maxeltr.rstclnt.Config.Config;
-import ru.maxeltr.rstclnt.Crypter;
+import ru.maxeltr.rstclnt.Service.Crypter;
 
 /**
  *

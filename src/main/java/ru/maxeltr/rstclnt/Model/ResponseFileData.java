@@ -33,11 +33,11 @@ import javafx.beans.property.SimpleStringProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ResponseFileData {
 
-    private String currentPage;
+    private String currentPageLink;
 
-    private String firstPage;
+    private String firstPageLink;
 
-    private String lastPage;
+    private String lastPageLink;
 
     @JsonProperty("_embedded")
     private FileList fileList;
@@ -54,13 +54,13 @@ public class ResponseFileData {
     private String page;
 
     @JsonProperty("_links")
-    private void unpackNestedChangeDate(Map<String,Object> links) {
+    private void unpackNestedLinks(Map<String,Object> links) {
         Map<String,String> self = (Map<String,String>)links.get("self");
-        this.currentPage = self.get("href");
+        this.currentPageLink = self.get("href");
         Map<String,String> first = (Map<String,String>)links.get("first");
-        this.firstPage = first.get("href");
+        this.firstPageLink = first.get("href");
         Map<String,String> last = (Map<String,String>)links.get("last");
-        this.lastPage = last.get("href");
+        this.lastPageLink = last.get("href");
     }
 
 //    public void ResponseData() {
@@ -68,28 +68,28 @@ public class ResponseFileData {
 //
 //    }
 
-    public String getCurrentPage() {
-        return this.currentPage;
+    public String getCurrentPageLink() {
+        return this.currentPageLink;
     }
 
-    public void setCurrentPage(String currentPage) {
-        this.currentPage = currentPage;
+    public void setCurrentPageLink(String currentPageLink) {
+        this.currentPageLink = currentPageLink;
     }
 
-    public String getFirstPage() {
-        return this.firstPage;
+    public String getFirstPageLink() {
+        return this.firstPageLink;
     }
 
-    public void setFirstPage(String firstPage) {
-        this.firstPage = firstPage;
+    public void setFirstPageLink(String firstPageLink) {
+        this.firstPageLink = firstPageLink;
     }
 
-    public String getLastPage() {
-        return this.lastPage;
+    public String getLastPageLink() {
+        return this.lastPageLink;
     }
 
-    public void setLastPage(String lastPage) {
-        this.lastPage = lastPage;
+    public void setLastPageLink(String lastPageLink) {
+        this.lastPageLink = lastPageLink;
     }
 
     public FileList getFileList() {
@@ -134,6 +134,6 @@ public class ResponseFileData {
 
     @Override
     public String toString() {
-        return " currentPage: " + this.getCurrentPage() + ", firstPage: " + this.getFirstPage() + ", lastPage: " + this.getLastPage() + ", page_count: " + this.getPageCount() + ", page_size: " + this.getPageSize() + ", total_items: " + this.getTotalItems() + ", page: " + this.getPage();
+        return " currentPage: " + this.getCurrentPageLink() + ", firstPage: " + this.getFirstPageLink() + ", lastPage: " + this.getLastPageLink() + ", page_count: " + this.getPageCount() + ", page_size: " + this.getPageSize() + ", total_items: " + this.getTotalItems() + ", page: " + this.getPage();
     }
 }

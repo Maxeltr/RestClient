@@ -40,10 +40,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import ru.maxeltr.rstclnt.Config.AppConfig;
 import ru.maxeltr.rstclnt.Config.Config;
-import ru.maxeltr.rstclnt.Crypter;
 import ru.maxeltr.rstclnt.Model.FileModel;
 import ru.maxeltr.rstclnt.Model.ResponseFileData;
 
@@ -52,6 +53,8 @@ public class RestService {
     private final Crypter crypter;
 
     private final Config config;
+
+    private ResponseFileData responseFileData;
 
     private String accessToken = "";
     private String expiresIn = "";
@@ -67,59 +70,88 @@ public class RestService {
     public ObservableList<FileModel> getListRemoteFiles() {
         ObservableList<FileModel> items = FXCollections.observableArrayList();
 
+        HttpEntity<String> requestEntity;
+        ResponseEntity<ResponseFileData> response;
         RestTemplate restTemplate = new RestTemplate();
+        requestEntity = new HttpEntity<>(this.buildAuthorizationHeaders());
+
+        try {
+            response = restTemplate.exchange(AppConfig.URL_GET_FILES, HttpMethod.GET, requestEntity, ResponseFileData.class);
+        } catch (HttpClientErrorException ex) {
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, null, ex);
+            this.authenticate();
+            requestEntity = new HttpEntity<>(this.buildAuthorizationHeaders());
+            response = restTemplate.exchange(AppConfig.URL_GET_FILES, HttpMethod.GET, requestEntity, ResponseFileData.class);
+        } catch (HttpStatusCodeException ex) {
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, null, ex);
+
+            return items;
+        }
+
+        this.responseFileData = response.getBody();
+        FileModel[] files = this.responseFileData.getFileList().getFiles();
+        items.addAll(Arrays.asList(files));
+
+        return items;
+    }
+
+    private HttpHeaders buildAuthorizationHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", "Bearer " + this.getToken());
-        HttpEntity<String> entity = new HttpEntity<>(headers);
 
-        ResponseEntity<ResponseFileData> response = restTemplate.exchange(AppConfig.URL_GET_FILES, HttpMethod.GET, entity, ResponseFileData.class);
-        FileModel[] files = response.getBody().getFileList().getFiles();
-
-        items.addAll(Arrays.asList(files));
-        return items;
+        return headers;
     }
 
     public String getToken() {
-        if (!this.accessToken.isEmpty()) {
-            return this.accessToken;
-        }
-
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        if (this.crypter.isInitialized()) {
-
-            try {
-                Map<String, String> body = new HashMap<>();
-                body.put("grant_type", new String(this.crypter.decrypt(this.config.getProperty("GrantTypes", "")), AppConfig.DEFAULT_ENCODING));
-                body.put("client_secret", new String(this.crypter.decrypt(this.config.getProperty("ClientSecret", "")), AppConfig.DEFAULT_ENCODING));
-                body.put("client_id", new String(this.crypter.decrypt(this.config.getProperty("ClientId", "")), AppConfig.DEFAULT_ENCODING));
-
-                HttpEntity<Map> requestEntity = new HttpEntity<>(body, headers);
-
-                ResponseEntity<Map> response = restTemplate.exchange(AppConfig.URL_GET_TOKEN, HttpMethod.POST, requestEntity, Map.class);
-
-//                System.out.println(response.getBody());
-
-                this.accessToken = response.getBody().get("access_token").toString();
-                this.expiresIn = response.getBody().get("expires_in").toString();
-                this.tokenType = response.getBody().get("token_type").toString();
-                this.scope = response.getBody().get("scope").toString();
-
-            } catch (UnsupportedEncodingException ex) {
-                Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-        }
-
         return this.accessToken;
     }
 
-    public String refreshToken() {
-        return null;
+    public String authenticate() {
+        this.accessToken = "";
+        this.expiresIn = "";
+        this.tokenType = "";
+        this.scope = "";
+
+        if (!this.crypter.isInitialized()) {
+            if (!this.crypter.initialize()) {
+                return this.accessToken;
+            }
+        }
+
+        Map<String, String> body = new HashMap<>();
+        try {
+            body.put("grant_type", new String(this.crypter.decrypt(this.config.getProperty("GrantTypes", "")), AppConfig.DEFAULT_ENCODING));
+            body.put("client_secret", new String(this.crypter.decrypt(this.config.getProperty("ClientSecret", "")), AppConfig.DEFAULT_ENCODING));
+            body.put("client_id", new String(this.crypter.decrypt(this.config.getProperty("ClientId", "")), AppConfig.DEFAULT_ENCODING));
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, null, ex);
+
+            return this.accessToken;
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map> requestEntity = new HttpEntity<>(body, headers);
+        RestTemplate restTemplate = new RestTemplate();
+
+        ResponseEntity<Map> response;
+        try {
+            response = restTemplate.exchange(AppConfig.URL_GET_TOKEN, HttpMethod.POST, requestEntity, Map.class);
+        } catch (HttpStatusCodeException ex) {
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, null, ex);
+
+            return this.accessToken;
+        }
+
+        this.accessToken = response.getBody().get("access_token").toString();
+        this.expiresIn = response.getBody().get("expires_in").toString();
+        this.tokenType = response.getBody().get("token_type").toString();
+        this.scope = response.getBody().get("scope").toString();
+
+        return this.accessToken;
     }
 
     public void downloadRemoteFile() {

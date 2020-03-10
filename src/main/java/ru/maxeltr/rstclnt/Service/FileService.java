@@ -43,7 +43,6 @@ import javafx.scene.image.Image;
 import org.springframework.web.client.RestTemplate;
 import ru.maxeltr.rstclnt.Config.AppConfig;
 import ru.maxeltr.rstclnt.Config.Config;
-import ru.maxeltr.rstclnt.Crypter;
 import ru.maxeltr.rstclnt.Model.FileModel;
 
 public class FileService {
