@@ -67,23 +67,38 @@ public class RestService {
 
     }
 
-    public ObservableList<FileModel> getListRemoteFiles() {
+    public ObservableList<FileModel> getListRemoteFiles(String page) {
         ObservableList<FileModel> items = FXCollections.observableArrayList();
 
+        if (!this.crypter.isInitialized()) {
+            if (!this.crypter.initialize()) {
+                return items;
+            } else {
+                this.authenticate();
+            }
+        }
+
+        String url = page.isEmpty() ? AppConfig.URL_GET_FILES : AppConfig.URL_GET_FILES + "?page=" + page;
         HttpEntity<String> requestEntity;
         ResponseEntity<ResponseFileData> response;
         RestTemplate restTemplate = new RestTemplate();
         requestEntity = new HttpEntity<>(this.buildAuthorizationHeaders());
 
         try {
-            response = restTemplate.exchange(AppConfig.URL_GET_FILES, HttpMethod.GET, requestEntity, ResponseFileData.class);
+            response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, ResponseFileData.class);
         } catch (HttpClientErrorException ex) {
-            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot connect to server. Token has expired may be. Let's try to authenticate.", ex);
             this.authenticate();
             requestEntity = new HttpEntity<>(this.buildAuthorizationHeaders());
-            response = restTemplate.exchange(AppConfig.URL_GET_FILES, HttpMethod.GET, requestEntity, ResponseFileData.class);
+            try {
+                response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, ResponseFileData.class);
+            } catch (HttpStatusCodeException e) {
+                Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot connect to server. May be re-authentication failed.", e);
+
+                return items;
+            }
         } catch (HttpStatusCodeException ex) {
-            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot connect to server.", ex);
 
             return items;
         }
@@ -126,7 +141,7 @@ public class RestService {
             body.put("client_secret", new String(this.crypter.decrypt(this.config.getProperty("ClientSecret", "")), AppConfig.DEFAULT_ENCODING));
             body.put("client_id", new String(this.crypter.decrypt(this.config.getProperty("ClientId", "")), AppConfig.DEFAULT_ENCODING));
         } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot get client credentials from config.", ex);
 
             return this.accessToken;
         }
@@ -141,7 +156,7 @@ public class RestService {
         try {
             response = restTemplate.exchange(AppConfig.URL_GET_TOKEN, HttpMethod.POST, requestEntity, Map.class);
         } catch (HttpStatusCodeException ex) {
-            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot authenticate.", ex);
 
             return this.accessToken;
         }

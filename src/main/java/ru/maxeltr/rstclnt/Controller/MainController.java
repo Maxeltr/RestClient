@@ -260,7 +260,7 @@ public class MainController extends AbstractController implements Initializable 
 
     @FXML
     private void handleConnect(ActionEvent event) {
-        ObservableList files = this.restService.getListRemoteFiles();
+        ObservableList files = this.restService.getListRemoteFiles("1");
         this.fileTable.setItems(files);
     }
 
