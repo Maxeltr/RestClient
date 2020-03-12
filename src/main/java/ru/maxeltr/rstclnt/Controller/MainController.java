@@ -34,6 +34,7 @@ import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
 import javafx.stage.Stage;
@@ -46,6 +47,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.input.ScrollEvent;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
@@ -78,6 +80,15 @@ public class MainController extends AbstractController implements Initializable 
 
     @FXML
     private StackPane textOrImagePane;
+
+    @FXML
+    private TextField currentPage;
+
+    @FXML
+    private Button nextPage;
+
+    @FXML
+    private Button prevPage;
 
     private File currentFolder;
 
@@ -165,7 +176,7 @@ public class MainController extends AbstractController implements Initializable 
     }
 
     @FXML
-    private void handleFileTableClicked(MouseEvent event) throws UnsupportedEncodingException {
+    private void handleFileTableClicked(MouseEvent event) throws UnsupportedEncodingException, IOException {
         if (event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 2) {
             FileModel fileModel = this.fileTable.getSelectionModel().getSelectedItem();
             if (fileModel == null) {
@@ -173,40 +184,59 @@ public class MainController extends AbstractController implements Initializable 
                 return;
             }
 
-            String codePage = this.config.getProperty("CodePage", AppConfig.DEFAULT_ENCODING);
-
-            switch (fileModel.getType()) {
-                case ("text/plain"):
-                    this.changeToTexWin();
-
-                    byte[] decrypted = this.fileService.getText(fileModel);
-
-                    String str = new String(decrypted, codePage);
-
-                    ObservableList<String> lvItems = FXCollections.observableArrayList();
-                    for (String s : str.split(System.lineSeparator())) {
-                        lvItems.add(s);
-                    }
-
-                    this.textWin.getItems().clear();
-                    this.textWin.setItems(lvItems);
-
-                    break;
-                case ("image/jpeg"):
-                    this.changeToImgWin();
-
-                    try {
-                        Image img = this.fileService.getImage(fileModel);
-                        this.logImageView.setImage(img);
-                    } catch (Exception ex) {
-                        Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-
-                    break;
-                default:
-                    Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("%s has an unsupported file type.%n", this.currentFolder + "\\" + fileModel.getFilename()));
+            File file = new File(this.fileService.getCurrentLogDir(), fileModel.getFilename());
+            if (!file.exists()) {
+                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Cannot show content of file: %s, because file does not exist on disk. Try to download.%n", file.getCanonicalPath()));
+                File downloadfile = this.restService.downloadFile(fileModel, this.fileService.getCurrentLogDir());
+                if (downloadfile == null) {
+                    return;
+                }
             }
 
+            this.viewContent(fileModel);
+
+
+        }
+    }
+
+    private void viewContent(FileModel fileModel) throws UnsupportedEncodingException {
+        String fileType = this.fileService.getFileType(this.fileService.getCurrentLogDir() + "\\" + fileModel.getFilename());
+        switch (fileType) {
+            case ("text/plain"):
+                this.changeToTexWin();
+
+                byte[] decrypted = this.fileService.getText(fileModel);
+
+                String str;
+                try {
+                    str = new String(decrypted, this.config.getProperty("CodePage", AppConfig.DEFAULT_ENCODING));
+                } catch (UnsupportedEncodingException ex) {
+                    Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
+                    return;
+                }
+
+                ObservableList<String> lvItems = FXCollections.observableArrayList();
+                for (String s : str.split(System.lineSeparator())) {
+                    lvItems.add(s);
+                }
+
+                this.textWin.getItems().clear();
+                this.textWin.setItems(lvItems);
+
+                break;
+            case ("image/jpeg"):
+                this.changeToImgWin();
+
+                try {
+                    Image img = this.fileService.getImage(fileModel);
+                    this.logImageView.setImage(img);
+                } catch (Exception ex) {
+                    Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
+                }
+
+                break;
+            default:
+                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("%s has an unsupported file type.%n", this.currentFolder + "\\" + fileModel.getFilename()));
         }
     }
 
@@ -262,6 +292,19 @@ public class MainController extends AbstractController implements Initializable 
     private void handleConnect(ActionEvent event) {
         ObservableList files = this.restService.getListRemoteFiles("1");
         this.fileTable.setItems(files);
+    }
+
+    @FXML
+    private void handleGetNextPage(ActionEvent event) {
+        ObservableList files = this.restService.getNextPage();
+        if (!files.isEmpty()) {
+            this.fileTable.setItems(files);
+        }
+    }
+
+    @FXML
+    private void handleGetPrevPage(ActionEvent event) {
+
     }
 
     @FXML

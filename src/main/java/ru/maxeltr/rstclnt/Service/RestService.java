@@ -23,6 +23,8 @@
  */
 package ru.maxeltr.rstclnt.Service;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,9 +42,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 import ru.maxeltr.rstclnt.Config.AppConfig;
 import ru.maxeltr.rstclnt.Config.Config;
 import ru.maxeltr.rstclnt.Model.FileModel;
@@ -91,7 +95,7 @@ public class RestService {
             this.authenticate();
             requestEntity = new HttpEntity<>(this.buildAuthorizationHeaders());
             try {
-                response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, ResponseFileData.class);
+                response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, ResponseFileData.class);   //TODO delete this
             } catch (HttpStatusCodeException e) {
                 Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot connect to server. May be re-authentication failed.", e);
 
@@ -108,6 +112,51 @@ public class RestService {
         items.addAll(Arrays.asList(files));
 
         return items;
+    }
+
+    public File downloadFile(FileModel fileModel, File dir) {
+        if (fileModel.getFileId() == null) {
+            Logger.getLogger(RestService.class.getName()).log(Level.WARNING, String.format("Cannot download file, because id is null.%n"));
+            return null;
+        }
+
+        String url = AppConfig.URL_GET_FILE + "/" + fileModel.getFileId() + "?d=1";
+        HttpEntity<String> requestEntity = new HttpEntity<>(this.buildAuthorizationHeaders());
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url);
+        builder.queryParams(requestEntity.getHeaders());
+        RestTemplate restTemplate = new RestTemplate();
+        File file = restTemplate.execute(builder.toUriString(), HttpMethod.GET, null, response -> {
+            File tempFile = File.createTempFile(dir.getCanonicalPath(), fileModel.getFilename());
+            StreamUtils.copy(response.getBody(), new FileOutputStream(tempFile));
+
+            return tempFile;
+        });
+
+        return file;
+    }
+
+    public ObservableList<FileModel> getNextPage() {
+        ObservableList<FileModel> items = FXCollections.observableArrayList();
+        if (this.responseFileData == null) {
+            return items;
+        }
+
+        int currentPage, pageCount;
+        try {
+            currentPage = Integer.parseInt(this.responseFileData.getPage());
+            pageCount = Integer.parseInt(this.responseFileData.getPageCount());
+        } catch (NumberFormatException ex) {
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot parse current page or page count to int.", ex);
+
+            return items;
+        }
+
+        currentPage++;
+        if (currentPage > pageCount) {
+            return items;
+        }
+
+        return this.getListRemoteFiles(Integer.toString(currentPage));
     }
 
     private HttpHeaders buildAuthorizationHeaders() {

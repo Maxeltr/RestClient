@@ -104,20 +104,12 @@ public class FileService {
             for (File file : files) {
                 try {
                     fileName = file.getName();
-                    fileType = Files.probeContentType(file.toPath());
-                    if (fileType == null) {
-                        if (fileName.toLowerCase().endsWith(".log")) {
-                            fileType = "text/plain";
-                        } else {
-                            Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("%s has an unknown filetype.", file.toPath()));
-                            continue;
-                        }
-                    } else {
-                        if (!fileType.equals("image/jpeg") && !fileType.equals("text/plain")) {
-                            Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("'%s' has an" + " unsupported filetype.%n", file.toPath()));
-                            continue;
-                        }
+                    fileType = this.getFileType(file.getCanonicalPath());
+                    if (!fileType.equals("image/jpeg") && !fileType.equals("text/plain")) {
+                        Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("'%s' has an" + " unsupported filetype.%n", file.toPath()));
+                        continue;
                     }
+
                     FileModel fileModel = new FileModel();
                     fileModel.setFilename(fileName);
                     fileModel.setDate(sdf.format(file.lastModified()));
@@ -131,6 +123,26 @@ public class FileService {
         }
 
         return items;
+    }
+
+    public String getFileType(String filePathName) {
+        String fileType;
+        try {
+            Path path = new File(filePathName).toPath();
+            fileType = Files.probeContentType(path);
+            if (fileType == null) {
+                if (filePathName.toLowerCase().endsWith(".log")) {
+                    fileType = "text/plain";
+                } else {
+                    fileType = "";
+                }
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(FileService.class.getName()).log(Level.SEVERE, null, ex);
+            fileType = "";
+        }
+
+        return fileType;
     }
 
     public byte[] getText(FileModel fileModel) throws UnsupportedEncodingException {
