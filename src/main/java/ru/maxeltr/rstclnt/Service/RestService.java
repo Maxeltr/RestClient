@@ -25,7 +25,12 @@ package ru.maxeltr.rstclnt.Service;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -114,25 +119,44 @@ public class RestService {
         return items;
     }
 
-    public File downloadFile(FileModel fileModel, File dir) {
+    public File downloadFile(FileModel fileModel, File dir) throws IOException {
         if (fileModel.getFileId() == null) {
             Logger.getLogger(RestService.class.getName()).log(Level.WARNING, String.format("Cannot download file, because id is null.%n"));
             return null;
         }
+        String filename = fileModel.getFilename();
+        String prefix = filename.substring(0, filename.lastIndexOf('.'));
+        String url = AppConfig.URL_GET_FILE + "/" + fileModel.getFileId();
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer ");
+        headers.set("access_token", this.getToken());
+        headers.set("d", "1");
+        HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
-        String url = AppConfig.URL_GET_FILE + "/" + fileModel.getFileId() + "?d=1";
-        HttpEntity<String> requestEntity = new HttpEntity<>(this.buildAuthorizationHeaders());
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url);
         builder.queryParams(requestEntity.getHeaders());
         RestTemplate restTemplate = new RestTemplate();
-        File file = restTemplate.execute(builder.toUriString(), HttpMethod.GET, null, response -> {
-            File tempFile = File.createTempFile(dir.getCanonicalPath(), fileModel.getFilename());
-            StreamUtils.copy(response.getBody(), new FileOutputStream(tempFile));
 
-            return tempFile;
-        });
+        File source, destination;
+        try {
+            source = restTemplate.execute(builder.toUriString(), HttpMethod.GET, null, response -> {
+                File tempFile = File.createTempFile(prefix, null, dir);
+                try (FileOutputStream out = new FileOutputStream(tempFile)) {
+                    StreamUtils.copy(response.getBody(), out);
+                }
 
-        return file;
+                return tempFile;
+            });
+        } catch (HttpStatusCodeException ex) {
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot download file.", ex);
+
+            return null;
+        }
+
+        destination = new File(dir.getCanonicalPath() + File.separator + filename);
+        Files.move(source.toPath(), destination.toPath());
+
+        return destination;
     }
 
     public ObservableList<FileModel> getNextPage() {

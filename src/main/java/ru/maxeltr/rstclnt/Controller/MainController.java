@@ -90,7 +90,7 @@ public class MainController extends AbstractController implements Initializable 
     @FXML
     private Button prevPage;
 
-    private File currentFolder;
+//    private File currentFolder;
 
     private ListView<String> textWin;
 
@@ -236,7 +236,7 @@ public class MainController extends AbstractController implements Initializable 
 
                 break;
             default:
-                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("%s has an unsupported file type.%n", this.currentFolder + "\\" + fileModel.getFilename()));
+                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("%s has an unsupported file type: %s.%n", this.fileService.getCurrentLogDir() + "\\" + fileModel.getFilename(), fileType));
         }
     }
 
