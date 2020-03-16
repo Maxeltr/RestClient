@@ -200,7 +200,7 @@ public class MainController extends AbstractController implements Initializable 
     }
 
     private void viewContent(FileModel fileModel) throws UnsupportedEncodingException {
-        String fileType = this.fileService.getFileType(this.fileService.getCurrentLogDir() + "\\" + fileModel.getFilename());
+        String fileType = this.fileService.getFileType(this.fileService.getCurrentLogDir() + File.separator + fileModel.getFilename());
         switch (fileType) {
             case ("text/plain"):
                 this.changeToTexWin();
@@ -236,7 +236,7 @@ public class MainController extends AbstractController implements Initializable 
 
                 break;
             default:
-                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("%s has an unsupported file type: %s.%n", this.fileService.getCurrentLogDir() + "\\" + fileModel.getFilename(), fileType));
+                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("%s has an unsupported file type: %s.%n", this.fileService.getCurrentLogDir() + File.separator + fileModel.getFilename(), fileType));
         }
     }
 

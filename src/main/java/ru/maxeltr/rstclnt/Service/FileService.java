@@ -153,7 +153,7 @@ public class FileService {
 
         byte[] data = this.readBytes(file);
         if (data.length == 0) {
-            Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("Cannot read file: %s.%n", this.currentLogDir + "\\" + fileModel.getFilename()));
+            Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("Cannot read file: %s.%n", this.currentLogDir + File.separator + fileModel.getFilename()));
             return data;
         }
 
@@ -186,7 +186,7 @@ public class FileService {
 
         byte[] data = this.readBytes(file);
         if (data.length == 0) {
-            Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("Cannot read file: %s.%n", this.currentLogDir + "\\" + fileModel.getFilename()));
+            Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("Cannot read file: %s.%n", this.currentLogDir + File.separator + fileModel.getFilename()));
             //throw exception
         }
 
