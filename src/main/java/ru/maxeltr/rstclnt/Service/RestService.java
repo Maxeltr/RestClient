@@ -183,6 +183,29 @@ public class RestService {
         return this.getListRemoteFiles(Integer.toString(currentPage));
     }
 
+    public ObservableList<FileModel> getPrevPage() {
+        ObservableList<FileModel> items = FXCollections.observableArrayList();
+        if (this.responseFileData == null) {
+            return items;
+        }
+
+        int currentPage;
+        try {
+            currentPage = Integer.parseInt(this.responseFileData.getPage());
+        } catch (NumberFormatException ex) {
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot parse current page or page count to int.", ex);
+
+            return items;
+        }
+
+        currentPage--;
+        if (currentPage < 1) {
+            return items;
+        }
+
+        return this.getListRemoteFiles(Integer.toString(currentPage));
+    }
+
     private HttpHeaders buildAuthorizationHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
@@ -190,6 +213,10 @@ public class RestService {
         headers.set("Authorization", "Bearer " + this.getToken());
 
         return headers;
+    }
+
+    public String getCurrentPage() {
+        return this.responseFileData.getPage();
     }
 
     public String getToken() {

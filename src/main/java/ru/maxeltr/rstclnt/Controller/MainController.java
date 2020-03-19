@@ -90,6 +90,9 @@ public class MainController extends AbstractController implements Initializable 
     @FXML
     private Button prevPage;
 
+    @FXML
+    private TextField currentPageField;
+
 //    private File currentFolder;
 
     private ListView<String> textWin;
@@ -143,7 +146,11 @@ public class MainController extends AbstractController implements Initializable 
             event.consume();
         });
 
-        this.fileTable.setItems(this.fileService.getLocalFiles());
+        ObservableList files = this.fileService.getLocalFiles();
+        if (!files.isEmpty()) {
+            this.fileTable.setItems(files);
+            this.currentPageField.setText("1");
+        }
     }
 
     @FXML
@@ -172,7 +179,10 @@ public class MainController extends AbstractController implements Initializable 
         this.logImageView.setImage(null);
 
         ObservableList files = this.fileService.setCurrentLogDir(folder).getLocalFiles();
-        this.fileTable.setItems(files);
+        if (!files.isEmpty()) {
+            this.fileTable.setItems(files);
+            this.currentPageField.setText("1");
+        }
     }
 
     @FXML
@@ -299,12 +309,17 @@ public class MainController extends AbstractController implements Initializable 
         ObservableList files = this.restService.getNextPage();
         if (!files.isEmpty()) {
             this.fileTable.setItems(files);
+            this.currentPageField.setText(this.restService.getCurrentPage());
         }
     }
 
     @FXML
     private void handleGetPrevPage(ActionEvent event) {
-
+        ObservableList files = this.restService.getPrevPage();
+        if (!files.isEmpty()) {
+            this.fileTable.setItems(files);
+            this.currentPageField.setText(this.restService.getCurrentPage());
+        }
     }
 
     @FXML
