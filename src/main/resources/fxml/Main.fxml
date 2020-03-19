@@ -21,6 +21,7 @@
         <Menu mnemonicParsing="false" text="Server" fx:id="menuServer">
           <items>
             <MenuItem mnemonicParsing="false" onAction="#handleConnect" text="Connect" fx:id="menuConnect" />
+            <MenuItem mnemonicParsing="false" onAction="#handleDownloadCurrentPageFiles" text="Download files" fx:id="menuDownloadCurrentPageFiles" />
           </items>
         </Menu>
         <Menu mnemonicParsing="false" text="Configuration" fx:id="menuConfiguration">

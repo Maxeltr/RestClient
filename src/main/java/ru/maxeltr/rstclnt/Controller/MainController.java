@@ -94,7 +94,6 @@ public class MainController extends AbstractController implements Initializable 
     private TextField currentPageField;
 
 //    private File currentFolder;
-
     private ListView<String> textWin;
 
     private ImageView logImageView;
@@ -186,7 +185,7 @@ public class MainController extends AbstractController implements Initializable 
     }
 
     @FXML
-    private void handleFileTableClicked(MouseEvent event) throws UnsupportedEncodingException, IOException {
+    private void handleFileTableClicked(MouseEvent event) throws UnsupportedEncodingException {
         if (event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 2) {
             FileModel fileModel = this.fileTable.getSelectionModel().getSelectedItem();
             if (fileModel == null) {
@@ -196,7 +195,7 @@ public class MainController extends AbstractController implements Initializable 
 
             File file = new File(this.fileService.getCurrentLogDir(), fileModel.getFilename());
             if (!file.exists()) {
-                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Cannot show content of file: %s, because file does not exist on disk. Try to download.%n", file.getCanonicalPath()));
+                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Cannot show content of file: %s, because file does not exist on disk. Try to download.%n", file.getName()));
                 File downloadfile = this.restService.downloadFile(fileModel, this.fileService.getCurrentLogDir());
                 if (downloadfile == null) {
                     return;
@@ -204,7 +203,6 @@ public class MainController extends AbstractController implements Initializable 
             }
 
             this.viewContent(fileModel);
-
 
         }
     }
@@ -302,6 +300,7 @@ public class MainController extends AbstractController implements Initializable 
     private void handleConnect(ActionEvent event) {
         ObservableList files = this.restService.getListRemoteFiles("1");
         this.fileTable.setItems(files);
+        this.updateCurrentPageNumber();
     }
 
     @FXML
@@ -309,8 +308,35 @@ public class MainController extends AbstractController implements Initializable 
         ObservableList files = this.restService.getNextPage();
         if (!files.isEmpty()) {
             this.fileTable.setItems(files);
-            this.currentPageField.setText(this.restService.getCurrentPage());
+            this.updateCurrentPageNumber();
         }
+    }
+
+    @FXML
+    public void handleDownloadCurrentPageFiles() {
+        int fileCounter = 0;
+        for (int i = 0; i < this.fileTable.getItems().size(); i++) {
+            FileModel fileModel = this.fileTable.getItems().get(i);
+            if (fileModel == null) {
+                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Cannot download file. File model is null.It will be skipped. %n"));
+                continue;
+            }
+
+            File file = new File(this.fileService.getCurrentLogDir(), fileModel.getFilename());
+            if (file.exists()) {
+                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("File: %s, exists on disk. Skip to download.%n", file.getName()));
+                continue;
+            }
+
+            File downloadfile = this.restService.downloadFile(fileModel, this.fileService.getCurrentLogDir());
+            if (downloadfile == null) {
+                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Cannot download file: %s. It will be skipped.%n", file.getName()));
+                continue;
+            }
+            fileCounter++;
+        }
+
+        this.showMessage(Integer.toString(fileCounter));
     }
 
     @FXML
@@ -318,8 +344,12 @@ public class MainController extends AbstractController implements Initializable 
         ObservableList files = this.restService.getPrevPage();
         if (!files.isEmpty()) {
             this.fileTable.setItems(files);
-            this.currentPageField.setText(this.restService.getCurrentPage());
+            this.updateCurrentPageNumber();
         }
+    }
+
+    private void updateCurrentPageNumber() {
+        this.currentPageField.setText(this.restService.getCurrentPage() + "/" + this.restService.getTotalPages());
     }
 
     @FXML
@@ -342,6 +372,16 @@ public class MainController extends AbstractController implements Initializable 
         alert.setTitle("Information");
         alert.setHeaderText(null);
         alert.setContentText("Not implemented!");
+
+        alert.showAndWait();
+    }
+
+    private void showMessage(String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+
+        alert.setTitle("Information");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
 
         alert.showAndWait();
     }

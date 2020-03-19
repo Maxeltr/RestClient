@@ -119,7 +119,7 @@ public class RestService {
         return items;
     }
 
-    public File downloadFile(FileModel fileModel, File dir) throws IOException {
+    public File downloadFile(FileModel fileModel, File dir) {
         if (fileModel.getFileId() == null) {
             Logger.getLogger(RestService.class.getName()).log(Level.WARNING, String.format("Cannot download file, because id is null.%n"));
             return null;
@@ -140,7 +140,13 @@ public class RestService {
         File source, destination;
         try {
             source = restTemplate.execute(builder.toUriString(), HttpMethod.GET, null, response -> {
-                File tempFile = File.createTempFile(prefix, null, dir);
+                File tempFile;
+                try {
+                    tempFile = File.createTempFile(prefix, null, dir);
+                } catch (IOException ex) {
+                    Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, String.format("Cannot create temp file in dir: %s.%n", dir.getAbsolutePath()), ex);
+                    return null;
+                }
                 try (FileOutputStream out = new FileOutputStream(tempFile)) {
                     StreamUtils.copy(response.getBody(), out);
                 }
@@ -148,13 +154,23 @@ public class RestService {
                 return tempFile;
             });
         } catch (HttpStatusCodeException ex) {
-            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot download file.", ex);
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, String.format("Cannot download file: %s.%n", filename), ex);
 
             return null;
         }
 
-        destination = new File(dir.getCanonicalPath() + File.separator + filename);
-        Files.move(source.toPath(), destination.toPath());
+        if (source == null) {
+            return null;
+        }
+
+        try {
+            destination = new File(dir.getCanonicalPath() + File.separator + filename);
+            Files.move(source.toPath(), destination.toPath());
+        } catch (IOException ex) {
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, null, ex);
+
+            return null;
+        }
 
         return destination;
     }
@@ -217,6 +233,10 @@ public class RestService {
 
     public String getCurrentPage() {
         return this.responseFileData.getPage();
+    }
+
+    public String getTotalPages() {
+        return this.responseFileData.getPageCount();
     }
 
     public String getToken() {
