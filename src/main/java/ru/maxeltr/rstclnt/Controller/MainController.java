@@ -313,7 +313,19 @@ public class MainController extends AbstractController implements Initializable 
     }
 
     @FXML
-    public void handleDownloadCurrentPageFiles() {
+    public void handleDownloadCurrentPageFilesToDir() {
+        DirectoryChooser chooser = new DirectoryChooser();
+        Window stage = (Stage) root.getScene().getWindow();
+        File folder = chooser.showDialog(stage);
+        if (folder == null) {
+            return;
+        }
+
+        int fileCounter = this.downloadCurrentPageFilesToDir(folder);
+        this.showMessage(Integer.toString(fileCounter));
+    }
+
+    private int downloadCurrentPageFilesToDir(File dir) {
         int fileCounter = 0;
         for (int i = 0; i < this.fileTable.getItems().size(); i++) {
             FileModel fileModel = this.fileTable.getItems().get(i);
@@ -322,13 +334,13 @@ public class MainController extends AbstractController implements Initializable 
                 continue;
             }
 
-            File file = new File(this.fileService.getCurrentLogDir(), fileModel.getFilename());
+            File file = new File(dir, fileModel.getFilename());
             if (file.exists()) {
                 Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("File: %s, exists on disk. Skip to download.%n", file.getName()));
                 continue;
             }
 
-            File downloadfile = this.restService.downloadFile(fileModel, this.fileService.getCurrentLogDir());
+            File downloadfile = this.restService.downloadFile(fileModel, dir);
             if (downloadfile == null) {
                 Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Cannot download file: %s. It will be skipped.%n", file.getName()));
                 continue;
@@ -336,6 +348,12 @@ public class MainController extends AbstractController implements Initializable 
             fileCounter++;
         }
 
+        return fileCounter;
+    }
+
+    @FXML
+    public void handleDownloadCurrentPageFiles() {
+        int fileCounter = this.downloadCurrentPageFilesToDir(this.fileService.getCurrentLogDir());
         this.showMessage(Integer.toString(fileCounter));
     }
 
