@@ -23,6 +23,7 @@
             <MenuItem mnemonicParsing="false" onAction="#handleConnect" text="Connect" fx:id="menuConnect" />
             <MenuItem mnemonicParsing="false" onAction="#handleDownloadCurrentPageFiles" text="Download files" fx:id="menuDownloadCurrentPageFiles" />
             <MenuItem mnemonicParsing="false" onAction="#handleDownloadCurrentPageFilesToDir" text="Download files to dir" fx:id="menuDownloadCurrentPageFilesToDir" />
+            <MenuItem id="menuUploadFile" mnemonicParsing="false" onAction="#handleUploadFile" text="Upload file" />
           </items>
         </Menu>
         <Menu mnemonicParsing="false" text="Configuration" fx:id="menuConfiguration">

@@ -313,6 +313,28 @@ public class MainController extends AbstractController implements Initializable 
     }
 
     @FXML
+    private void handleUploadFile(MouseEvent event) {
+        if (event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 2) {
+            FileModel fileModel = this.fileTable.getSelectionModel().getSelectedItem();
+            if (fileModel == null) {
+                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Cannot upload file. File model is null.%n"));
+                return;
+            }
+
+            File file = new File(this.fileService.getCurrentLogDir(), fileModel.getFilename());
+            if (!file.exists()) {
+                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Cannot upload file: %s, because file does not exist on disk.%n", file.getName()));
+
+                return;
+
+            }
+
+            ObservableList files = this.restService.uploadFile(fileModel, this.fileService.getCurrentLogDir());
+
+        }
+    }
+
+    @FXML
     public void handleDownloadCurrentPageFilesToDir() {
         DirectoryChooser chooser = new DirectoryChooser();
         Window stage = (Stage) root.getScene().getWindow();
@@ -322,7 +344,7 @@ public class MainController extends AbstractController implements Initializable 
         }
 
         int fileCounter = this.downloadCurrentPageFilesToDir(folder);
-        this.showMessage(Integer.toString(fileCounter));
+        this.showMessage("Downloaded files: " + Integer.toString(fileCounter));
     }
 
     private int downloadCurrentPageFilesToDir(File dir) {
@@ -354,7 +376,7 @@ public class MainController extends AbstractController implements Initializable 
     @FXML
     public void handleDownloadCurrentPageFiles() {
         int fileCounter = this.downloadCurrentPageFilesToDir(this.fileService.getCurrentLogDir());
-        this.showMessage(Integer.toString(fileCounter));
+        this.showMessage("Downloaded files: " + Integer.toString(fileCounter));
     }
 
     @FXML

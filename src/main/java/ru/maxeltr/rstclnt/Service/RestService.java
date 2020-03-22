@@ -289,14 +289,6 @@ public class RestService {
         return this.accessToken;
     }
 
-    public void downloadRemoteFile() {
-
-    }
-
-    public void downloadRemoteFiles() {
-
-    }
-
     private void messsageNotImplemented() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
 
