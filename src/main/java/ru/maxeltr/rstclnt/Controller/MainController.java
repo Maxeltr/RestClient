@@ -155,7 +155,7 @@ public class MainController extends AbstractController implements Initializable 
     @FXML
     private void handleEncipherFile(ActionEvent event) throws UnsupportedEncodingException, IOException {
         FileChooser chooser = new FileChooser();
-        Window stage = (Stage) root.getScene().getWindow();
+        Window stage = root.getScene().getWindow();
         File file = chooser.showOpenDialog(stage);
         if (file == null) {
             return;
@@ -167,7 +167,7 @@ public class MainController extends AbstractController implements Initializable 
     @FXML
     private void handleChooseFolder(ActionEvent event) throws IOException {
         DirectoryChooser chooser = new DirectoryChooser();
-        Window stage = (Stage) root.getScene().getWindow();
+        Window stage = root.getScene().getWindow();
         File folder = chooser.showDialog(stage);
         if (folder == null) {
             return;
@@ -315,7 +315,7 @@ public class MainController extends AbstractController implements Initializable 
     @FXML
     private void handleUploadFile() {
         FileChooser chooser = new FileChooser();
-        Window stage = (Stage) root.getScene().getWindow();
+        Window stage = root.getScene().getWindow();
         File file = chooser.showOpenDialog(stage);
         if (file == null) {
             return;
@@ -329,7 +329,7 @@ public class MainController extends AbstractController implements Initializable 
     @FXML
     public void handleDownloadCurrentPageFilesToDir() {
         DirectoryChooser chooser = new DirectoryChooser();
-        Window stage = (Stage) root.getScene().getWindow();
+        Window stage = root.getScene().getWindow();
         File folder = chooser.showDialog(stage);
         if (folder == null) {
             return;
