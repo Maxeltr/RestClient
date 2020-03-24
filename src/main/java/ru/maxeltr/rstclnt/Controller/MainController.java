@@ -313,25 +313,17 @@ public class MainController extends AbstractController implements Initializable 
     }
 
     @FXML
-    private void handleUploadFile(MouseEvent event) {
-        if (event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 2) {
-            FileModel fileModel = this.fileTable.getSelectionModel().getSelectedItem();
-            if (fileModel == null) {
-                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Cannot upload file. File model is null.%n"));
-                return;
-            }
-
-            File file = new File(this.fileService.getCurrentLogDir(), fileModel.getFilename());
-            if (!file.exists()) {
-                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Cannot upload file: %s, because file does not exist on disk.%n", file.getName()));
-
-                return;
-
-            }
-
-            ObservableList files = this.restService.uploadFile(fileModel, this.fileService.getCurrentLogDir());
-
+    private void handleUploadFile() {
+        FileChooser chooser = new FileChooser();
+        Window stage = (Stage) root.getScene().getWindow();
+        File file = chooser.showOpenDialog(stage);
+        if (file == null) {
+            return;
         }
+
+        this.restService.uploadFile(file.getName(), this.fileService.readBytes(file), "upload from rstclnt");
+
+        this.showMessage("Upload complete");
     }
 
     @FXML

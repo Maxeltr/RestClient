@@ -213,7 +213,7 @@ public class FileService {
         return Arrays.equals(smallerArray, Arrays.copyOfRange(largerArray, 0, smallerArray.length));
     }
 
-    private byte[] readBytes(File file) {
+    public byte[] readBytes(File file) {
         byte[] data = new byte[(int) file.length()];
         try (FileInputStream fis = new FileInputStream(file);) {
             BufferedInputStream bis = new BufferedInputStream(fis);

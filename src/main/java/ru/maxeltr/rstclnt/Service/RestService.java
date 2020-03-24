@@ -42,11 +42,14 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Alert;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -175,6 +178,39 @@ public class RestService {
         return destination;
     }
 
+    public void uploadFile(String filename, byte[] file, String description) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        headers.set("Authorization", "Bearer " + this.getToken());
+
+        MultiValueMap<String, String> fileMap = new LinkedMultiValueMap();
+        ContentDisposition contentDisposition = ContentDisposition
+                .builder("form-data")
+                .name("file")
+                .filename(filename)
+                .build();
+        fileMap.add(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString());
+        HttpEntity<byte[]> fileEntity = new HttpEntity(file, fileMap);
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap();
+        body.add("file", fileEntity);
+        body.add("description", description);
+
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity(body, headers);
+
+        RestTemplate restTemplate = new RestTemplate();
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    AppConfig.URL_UPLOAD_FILE,
+                    HttpMethod.POST,
+                    requestEntity,
+                    String.class
+            );
+        } catch (HttpClientErrorException ex) {
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, String.format("Cannot upload file: %s.%n", filename), ex);
+        }
+    }
+
     public ObservableList<FileModel> getNextPage() {
         ObservableList<FileModel> items = FXCollections.observableArrayList();
         if (this.responseFileData == null) {
@@ -257,7 +293,7 @@ public class RestService {
 
         Map<String, String> body = new HashMap<>();
         try {
-            body.put("grant_type", new String(this.crypter.decrypt(this.config.getProperty("GrantTypes", "")), AppConfig.DEFAULT_ENCODING));
+            body.put("grant_type", "client_credentials");
             body.put("client_secret", new String(this.crypter.decrypt(this.config.getProperty("ClientSecret", "")), AppConfig.DEFAULT_ENCODING));
             body.put("client_id", new String(this.crypter.decrypt(this.config.getProperty("ClientId", "")), AppConfig.DEFAULT_ENCODING));
         } catch (UnsupportedEncodingException ex) {
