@@ -26,22 +26,16 @@ package ru.maxeltr.rstclnt.Service;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Alert;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -91,24 +85,21 @@ public class RestService {
         }
 
         String url = page.isEmpty() ? AppConfig.URL_GET_FILES : AppConfig.URL_GET_FILES + "?page=" + page;
-        HttpEntity<String> requestEntity;
+
         ResponseEntity<ResponseFileData> response;
         RestTemplate restTemplate = new RestTemplate();
-        requestEntity = new HttpEntity<>(this.buildAuthorizationHeaders());
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + this.getToken());
+        HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
         try {
             response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, ResponseFileData.class);
         } catch (HttpClientErrorException ex) {
-            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot connect to server. Token has expired may be. Let's try to authenticate.", ex);
-            this.authenticate();
-            requestEntity = new HttpEntity<>(this.buildAuthorizationHeaders());
-            try {
-                response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, ResponseFileData.class);   //TODO delete this
-            } catch (HttpStatusCodeException e) {
-                Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot connect to server. May be re-authentication failed.", e);
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot connect to server. Token has expired may be. Try to authenticate.", ex);
 
-                return items;
-            }
+            return items;
         } catch (HttpStatusCodeException ex) {
             Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot connect to server.", ex);
 
@@ -256,15 +247,6 @@ public class RestService {
         }
 
         return this.getListRemoteFiles(Integer.toString(currentPage));
-    }
-
-    private HttpHeaders buildAuthorizationHeaders() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Bearer " + this.getToken());
-
-        return headers;
     }
 
     public String getCurrentPage() {

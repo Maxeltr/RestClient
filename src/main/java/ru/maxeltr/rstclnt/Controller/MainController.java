@@ -1,10 +1,6 @@
 package ru.maxeltr.rstclnt.Controller;
 
 import ru.maxeltr.rstclnt.Service.FileService;
-import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 import javafx.event.ActionEvent;
@@ -12,20 +8,8 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.stage.DirectoryChooser;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.collections.FXCollections;
@@ -51,11 +35,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.ScrollEvent;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
-import javax.imageio.ImageIO;
 import ru.maxeltr.rstclnt.Config.AppConfig;
 import ru.maxeltr.rstclnt.Config.Config;
 import ru.maxeltr.rstclnt.Model.FileModel;
-import org.springframework.web.client.RestTemplate;
 import ru.maxeltr.rstclnt.Service.RestService;
 
 public class MainController extends AbstractController implements Initializable {
@@ -93,7 +75,6 @@ public class MainController extends AbstractController implements Initializable 
     @FXML
     private TextField currentPageField;
 
-//    private File currentFolder;
     private ListView<String> textWin;
 
     private ImageView logImageView;
@@ -266,23 +247,6 @@ public class MainController extends AbstractController implements Initializable 
         }
     }
 
-    private boolean matchArrayBeginings(byte[] largerArray, byte[] smallerArray) {
-        return Arrays.equals(smallerArray, Arrays.copyOfRange(largerArray, 0, smallerArray.length));
-    }
-
-    private byte[] readBytes(File file) {
-        byte[] data = new byte[(int) file.length()];
-        try (FileInputStream fis = new FileInputStream(file);) {
-            BufferedInputStream bis = new BufferedInputStream(fis);
-            bis.read(data);
-        } catch (IOException ex) {
-            Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, String.format("Cannot open or read %s.%n", file.toString(), ex));
-            data = new byte[0];
-        }
-
-        return data;
-    }
-
     @FXML
     private void handleMenuSettings(ActionEvent event) throws IOException {
         Scene scene = new Scene(this.loadView("/fxml/Options.fxml", this.optionController));
@@ -298,6 +262,7 @@ public class MainController extends AbstractController implements Initializable 
 
     @FXML
     private void handleConnect(ActionEvent event) {
+        this.restService.authenticate();
         ObservableList files = this.restService.getListRemoteFiles("1");
         this.fileTable.setItems(files);
         this.updateCurrentPageNumber();
