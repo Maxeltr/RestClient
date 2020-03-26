@@ -47,7 +47,9 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.UnknownHttpStatusCodeException;
 import org.springframework.web.util.UriComponentsBuilder;
 import ru.maxeltr.rstclnt.Config.AppConfig;
 import ru.maxeltr.rstclnt.Config.Config;
@@ -97,11 +99,15 @@ public class RestService {
         try {
             response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, ResponseFileData.class);
         } catch (HttpClientErrorException ex) {
-            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot connect to server. Token has expired may be. Try to authenticate.", ex);
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot connect to server. HTTP status code 4xx.", ex);
 
             return items;
         } catch (HttpStatusCodeException ex) {
-            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot connect to server.", ex);
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot connect to server. HTTP status code 5xx", ex);
+
+            return items;
+        } catch (UnknownHttpStatusCodeException ex) {
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot connect to server. Unknown HTTP status", ex);
 
             return items;
         }
@@ -147,7 +153,7 @@ public class RestService {
 
                 return tempFile;
             });
-        } catch (HttpStatusCodeException ex) {
+        } catch (RestClientResponseException ex) {
             Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, String.format("Cannot download file: %s.%n", filename), ex);
 
             return null;
@@ -161,7 +167,7 @@ public class RestService {
             destination = new File(dir.getCanonicalPath() + File.separator + filename);
             Files.move(source.toPath(), destination.toPath());
         } catch (IOException ex) {
-            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, String.format("Cannot rename temp file %s to %s.%n", source.getName(), filename), ex);
 
             return null;
         }
@@ -169,7 +175,7 @@ public class RestService {
         return destination;
     }
 
-    public void uploadFile(String filename, byte[] file, String description) {
+    public boolean uploadFile(String filename, byte[] file, String description) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
         headers.set("Authorization", "Bearer " + this.getToken());
@@ -197,9 +203,13 @@ public class RestService {
                     requestEntity,
                     String.class
             );
-        } catch (HttpClientErrorException ex) {
+        } catch (RestClientResponseException ex) {
             Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, String.format("Cannot upload file: %s.%n", filename), ex);
+
+            return false;
         }
+
+        return true;
     }
 
     public ObservableList<FileModel> getNextPage() {
@@ -293,16 +303,26 @@ public class RestService {
         ResponseEntity<Map> response;
         try {
             response = restTemplate.exchange(AppConfig.URL_GET_TOKEN, HttpMethod.POST, requestEntity, Map.class);
+        } catch (HttpClientErrorException ex) {
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot authenticate. HTTP status code 4xx.", ex);
+
+            return this.accessToken;
         } catch (HttpStatusCodeException ex) {
-            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot authenticate.", ex);
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot authenticate. HTTP status code 5xx", ex);
+
+            return this.accessToken;
+        } catch (UnknownHttpStatusCodeException ex) {
+            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot authenticate. Unknown HTTP status", ex);
 
             return this.accessToken;
         }
 
-        this.accessToken = response.getBody().get("access_token").toString();
-        this.expiresIn = response.getBody().get("expires_in").toString();
-        this.tokenType = response.getBody().get("token_type").toString();
-        this.scope = response.getBody().get("scope").toString();
+        Map responseBody = response.getBody();
+
+        this.accessToken = responseBody.get("access_token").toString();
+        this.expiresIn = responseBody.get("expires_in").toString();
+        this.tokenType = responseBody.get("token_type").toString();
+        this.scope = responseBody.get("scope").toString();
 
         return this.accessToken;
     }
