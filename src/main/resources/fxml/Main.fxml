@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import java.lang.*?>
+<?import javafx.geometry.*?>
 <?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
 <AnchorPane id="AnchorPane" fx:id="root" prefHeight="465.0" prefWidth="636.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2">
   <children>
-    <MenuBar AnchorPane.bottomAnchor="405.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+    <MenuBar prefHeight="60.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
       <menus>
         <Menu mnemonicParsing="false" text="File" fx:id="menuFile">
           <items>
@@ -38,7 +39,7 @@
         </Menu>
       </menus>
     </MenuBar>
-    <SplitPane dividerPositions="0.5012285012285013" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" orientation="VERTICAL" prefHeight="409.0" prefWidth="636.0" AnchorPane.bottomAnchor="31.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="25.0">
+    <SplitPane dividerPositions="0.49385749385749383" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" orientation="VERTICAL" prefHeight="409.0" prefWidth="636.0" AnchorPane.bottomAnchor="31.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="25.0">
       <items>
         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="152.0" prefWidth="946.0">
           <children>
@@ -59,12 +60,24 @@
         </AnchorPane>
       </items>
     </SplitPane>
-    <HBox id="HBox" alignment="CENTER" layoutX="-1.0" layoutY="434.0" prefHeight="31.0" prefWidth="636.0" spacing="5.0">
+    <AnchorPane prefHeight="31.0" prefWidth="636.0" AnchorPane.bottomAnchor="-2.0" AnchorPane.leftAnchor="1.0" AnchorPane.rightAnchor="-1.0">
       <children>
-        <Button id="nextPage" fx:id="prevPage" minWidth="25.0" mnemonicParsing="false" onAction="#handleGetPrevPage" prefWidth="38.0" text="&lt;-" />
-        <TextField fx:id="currentPageField" editable="false" maxWidth="-Infinity" prefWidth="38.0" text="page" />
-        <Button fx:id="nextPage" minWidth="25.0" mnemonicParsing="false" onAction="#handleGetNextPage" prefWidth="38.0" text="-&gt;" />
+        <HBox alignment="CENTER" prefHeight="31.0" prefWidth="634.0" AnchorPane.bottomAnchor="1.5" AnchorPane.leftAnchor="-1.0" AnchorPane.rightAnchor="3.0" AnchorPane.topAnchor="-1.5">
+          <children>
+            <Button id="nextPage" fx:id="prevPage" minWidth="25.0" mnemonicParsing="false" onAction="#handleGetPrevPage" prefWidth="38.0" text="&lt;-">
+              <HBox.margin>
+                <Insets right="10.0" />
+              </HBox.margin>
+            </Button>
+            <TextField fx:id="currentPageField" editable="false" maxWidth="-Infinity" prefWidth="38.0" text="page" />
+            <Button fx:id="nextPage" minWidth="25.0" mnemonicParsing="false" onAction="#handleGetNextPage" prefWidth="38.0" text="-&gt;">
+              <HBox.margin>
+                <Insets left="10.0" />
+              </HBox.margin>
+            </Button>
+          </children>
+        </HBox>
       </children>
-    </HBox>
+    </AnchorPane>
   </children>
 </AnchorPane>

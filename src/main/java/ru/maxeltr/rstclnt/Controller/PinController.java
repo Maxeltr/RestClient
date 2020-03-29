@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -42,6 +43,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javax.crypto.BadPaddingException;
@@ -73,7 +76,9 @@ public class PinController extends AbstractController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-
+        Platform.runLater(() -> {
+            pinField.requestFocus();
+        });
     }
 
     public PinController() {
@@ -114,16 +119,27 @@ public class PinController extends AbstractController implements Initializable {
 
     @FXML
     private void handleOkButton(ActionEvent event) {
-        this.pin = this.pinField.getText().toCharArray();
-        this.pinField.clear();
-        Stage stage = (Stage) this.okButton.getScene().getWindow();
-        stage.close();
+        this.handleOk();
+    }
+
+    @FXML
+    private void handleEnterButton(KeyEvent event) {
+        if (event.getCode() == KeyCode.ENTER) {
+            this.handleOk();
+        }
     }
 
     @FXML
     private void handleCancelButton(ActionEvent event) {
         this.pinField.clear();
         Stage stage = (Stage) this.cancelButton.getScene().getWindow();
+        stage.close();
+    }
+
+    private void handleOk() {
+        this.pin = this.pinField.getText().toCharArray();
+        this.pinField.clear();
+        Stage stage = (Stage) this.okButton.getScene().getWindow();
         stage.close();
     }
 }
