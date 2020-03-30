@@ -138,7 +138,8 @@ public class MainController extends AbstractController implements Initializable 
         mi1.setOnAction((ActionEvent event) -> {
             FileModel fileModel = this.fileTable.getSelectionModel().getSelectedItem();
             File file = new File(this.fileService.getCurrentLogDir(), fileModel.getFilename());
-            if (!file.delete()) {
+
+            if (file.exists() && !file.delete()) {
                 Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Cannot delete file: %s from disk.%n", file.getName()));
 
                 return;
@@ -149,10 +150,9 @@ public class MainController extends AbstractController implements Initializable 
 
                 return;
             }
-            
+
             this.fileTable.getItems().remove(fileModel);
         });
-
 
         ContextMenu menu = new ContextMenu();
         menu.getItems().add(mi1);

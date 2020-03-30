@@ -214,8 +214,8 @@ public class RestService {
         ResponseEntity<ResponseFileData> response;
         String url = AppConfig.URL_DELETE_FILE + "/" + fileModel.getFileId();
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer ");
-        headers.set("access_token", this.getToken());
+        headers.set("Authorization", "Bearer " + this.getToken());
+//        headers.set("access_token", this.getToken());
         HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
         RestTemplate restTemplate = new RestTemplate();
