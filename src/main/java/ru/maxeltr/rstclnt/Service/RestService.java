@@ -78,14 +78,6 @@ public class RestService {
     public ObservableList<FileModel> getListRemoteFiles(String page) {
         ObservableList<FileModel> items = FXCollections.observableArrayList();
 
-        if (!this.crypter.isInitialized()) {
-            if (!this.crypter.initialize()) {
-                return items;
-            } else {
-                this.authenticate();
-            }
-        }
-
         String url = page.isEmpty() ? AppConfig.URL_GET_FILES : AppConfig.URL_GET_FILES + "?page=" + page;
 
         ResponseEntity<ResponseFileData> response;
@@ -205,6 +197,32 @@ public class RestService {
             );
         } catch (RestClientResponseException ex) {
             Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, String.format("Cannot upload file: %s.%n", filename), ex);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    public boolean deleteFile(FileModel fileModel) {
+        if (fileModel.getFileId() == null) {
+            Logger.getLogger(RestService.class.getName()).log(Level.WARNING, String.format("Cannot delete file, because id is null.%n"));
+
+            return false;
+        }
+
+        ResponseEntity<ResponseFileData> response;
+        String url = AppConfig.URL_DELETE_FILE + "/" + fileModel.getFileId();
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer ");
+        headers.set("access_token", this.getToken());
+        HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+
+        RestTemplate restTemplate = new RestTemplate();
+        try {
+            response = restTemplate.exchange(url, HttpMethod.DELETE, requestEntity, ResponseFileData.class);
+        } catch (RestClientResponseException ex) {
+            Logger.getLogger(RestService.class.getName()).log(Level.WARNING, String.format("Cannot download file: %s.%n", fileModel.getFilename()), ex);
 
             return false;
         }

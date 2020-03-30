@@ -19,7 +19,9 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableColumn;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -131,6 +133,30 @@ public class MainController extends AbstractController implements Initializable 
             this.fileTable.setItems(files);
             this.currentPageField.setText("1");
         }
+
+        MenuItem mi1 = new MenuItem("Delete");
+        mi1.setOnAction((ActionEvent event) -> {
+            FileModel fileModel = this.fileTable.getSelectionModel().getSelectedItem();
+            File file = new File(this.fileService.getCurrentLogDir(), fileModel.getFilename());
+            if (!file.delete()) {
+                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Cannot delete file: %s from disk.%n", file.getName()));
+
+                return;
+            }
+
+            if (!this.restService.deleteFile(fileModel)) {
+                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Cannot delete file: %s from server.%n", fileModel.getFilename()));
+
+                return;
+            }
+            
+            this.fileTable.getItems().remove(fileModel);
+        });
+
+
+        ContextMenu menu = new ContextMenu();
+        menu.getItems().add(mi1);
+        this.fileTable.setContextMenu(menu);
     }
 
     @FXML

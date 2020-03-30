@@ -56,6 +56,7 @@ public class AppConfig {
     public static final String URL_GET_FILE = "http://176.113.82.112/v1/api/file";
     public static final String URL_GET_TOKEN = "http://176.113.82.112/oauth";
     public static final String URL_UPLOAD_FILE = "http://176.113.82.112/api/file";
+    public static final String URL_DELETE_FILE = "http://176.113.82.112/api/file";
 
     @Bean
     public Config config() {
