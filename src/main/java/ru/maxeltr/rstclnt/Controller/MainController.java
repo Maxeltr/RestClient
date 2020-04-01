@@ -20,6 +20,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableColumn;
@@ -107,6 +108,23 @@ public class MainController extends AbstractController implements Initializable 
         type.setCellValueFactory(new PropertyValueFactory<>("type"));
 
         textWin = new ListView<>();
+        textWin.setCellFactory(param -> new ListCell<String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    setMinWidth(param.getWidth());
+                    setMaxWidth(param.getWidth());
+                    setPrefWidth(param.getWidth());
+                    setWrapText(true);
+                    setText(item);
+                }
+            }
+        });
 
         logImageView = new ImageView();
         logImageView.setPreserveRatio(true);
@@ -237,6 +255,7 @@ public class MainController extends AbstractController implements Initializable 
 
                 this.textWin.getItems().clear();
                 this.textWin.setItems(lvItems);
+                this.textWin.scrollTo(0);
 
                 break;
             case ("image/jpeg"):
