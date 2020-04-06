@@ -5,22 +5,15 @@
  */
 package ru.maxeltr.rstclnt;
 
-import java.net.URL;
 import ru.maxeltr.rstclnt.Config.AppConfig;
 import javafx.application.Application;
 import static javafx.application.Application.launch;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import ru.maxeltr.rstclnt.Controller.MainController;
-import ru.maxeltr.rstclnt.Controller.PinController;
 
 /**
  *

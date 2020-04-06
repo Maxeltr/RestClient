@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.logging.LogManager;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javax.crypto.NoSuchPaddingException;
@@ -57,6 +58,16 @@ public class AppConfig {
     public static final String URL_GET_TOKEN = "http://176.113.82.112/oauth";
     public static final String URL_UPLOAD_FILE = "http://176.113.82.112/api/file";
     public static final String URL_DELETE_FILE = "http://176.113.82.112/api/file";
+
+    public AppConfig() {
+        try {
+            LogManager.getLogManager().readConfiguration(
+                    AppConfig.class.getResourceAsStream("/logging.properties")
+            );
+        } catch (IOException | SecurityException ex) {
+            System.err.println("Could not setup logger configuration: " + ex.toString());
+        }
+    }
 
     @Bean
     public Config config() {

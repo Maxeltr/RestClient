@@ -1,4 +1,5 @@
 Configuration.xml
+RstClnt.log*
 
 # Compiled class file
 *.class
