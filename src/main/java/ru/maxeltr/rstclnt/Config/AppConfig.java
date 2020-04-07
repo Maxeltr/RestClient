@@ -27,7 +27,6 @@ import ru.maxeltr.rstclnt.Service.FileService;
 import java.io.IOException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.logging.LogManager;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;

@@ -65,8 +65,7 @@ public class Config {
         try (FileInputStream in = new FileInputStream(configFile);) {
             this.properties.loadFromXML(in);
         } catch (IOException e) {
-            //System.err.format("Cannot read configuration from file '%s'", this.path + "\\" + configFile.getName());
-            Logger.getLogger(Config.class.getName()).log(Level.WARNING, String.format("Cannot read configuration from file %s.%n", this.path + "\\" + configFile.getName()));
+            Logger.getLogger(Config.class.getName()).log(Level.WARNING, String.format("Cannot read configuration from file: %s.%n", this.path));
         }
     }
 
@@ -75,8 +74,7 @@ public class Config {
         try (FileOutputStream out = new FileOutputStream(configFile);) {
             this.properties.storeToXML(out, "Configuration");
         } catch (IOException e) {
-            //System.err.format("Cannot save configuration to file '%s'", this.path + "\\" + configFile.getName());
-            Logger.getLogger(Config.class.getName()).log(Level.WARNING, String.format("Cannot save configuration to file %s.%n", this.path + "\\" + configFile.getName()));
+            Logger.getLogger(Config.class.getName()).log(Level.WARNING, String.format("Cannot save configuration to file: %s.%n", this.path));
         }
     }
 }
