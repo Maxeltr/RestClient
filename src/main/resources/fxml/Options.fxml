@@ -20,12 +20,12 @@
         <Label alignment="CENTER" layoutX="202.0" layoutY="73.0" text="Key phrase" />
         <Label alignment="CENTER" layoutX="201.0" layoutY="106.0" prefHeight="17.0" prefWidth="60.0" text="Code page" />
         <Label alignment="CENTER" layoutX="201.0" layoutY="138.0" prefHeight="17.0" prefWidth="60.0" text="Log dir" />
-        <TextField id="logDirField" fx:id="clientSecretField" layoutX="266.0" layoutY="167.0" prefHeight="25.0" prefWidth="303.0" />
+        <TextField fx:id="clientSecretField" layoutX="266.0" layoutY="167.0" prefHeight="25.0" prefWidth="303.0" />
         <Label alignment="CENTER" layoutX="189.0" layoutY="171.0" prefHeight="17.0" prefWidth="72.0" text="Client secret" />
-        <TextField id="logDirField" fx:id="clientIdField" layoutX="266.0" layoutY="199.0" prefHeight="25.0" prefWidth="303.0" />
+        <TextField fx:id="clientIdField" layoutX="266.0" layoutY="199.0" prefHeight="25.0" prefWidth="303.0" />
         <Label alignment="CENTER" layoutX="189.0" layoutY="203.0" prefHeight="17.0" prefWidth="72.0" text="Client ID" textAlignment="LEFT" />
-        <TextField id="logDirField" fx:id="grantTypesField" layoutX="266.0" layoutY="233.0" prefHeight="25.0" prefWidth="303.0" />
-        <Label alignment="CENTER" layoutX="189.0" layoutY="237.0" prefHeight="17.0" prefWidth="72.0" text="Grant types" textAlignment="LEFT" />
+        <TextField fx:id="key2Field" layoutX="266.0" layoutY="233.0" prefHeight="25.0" prefWidth="303.0" />
+        <Label alignment="CENTER" layoutX="189.0" layoutY="237.0" prefHeight="17.0" prefWidth="72.0" text="Key2" textAlignment="LEFT" />
       </children>
     </AnchorPane>
   </content>

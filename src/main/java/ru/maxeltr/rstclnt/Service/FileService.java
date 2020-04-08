@@ -28,7 +28,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,7 +39,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Alert;
 import javafx.scene.image.Image;
-import ru.maxeltr.rstclnt.Config.AppConfig;
 import ru.maxeltr.rstclnt.Config.Config;
 import ru.maxeltr.rstclnt.Model.FileModel;
 
@@ -61,27 +59,22 @@ public class FileService {
         }
 
         if (this.crypter.isInitialized()) {
-            try {
-                String dir = new String(this.crypter.decrypt(this.config.getProperty("LogDir", "")), AppConfig.DEFAULT_ENCODING);
-                this.currentLogDir = new File(dir);
-            } catch (UnsupportedEncodingException ex) {
-                Logger.getLogger(FileService.class.getName()).log(Level.SEVERE, null, ex);
-                this.currentLogDir = new File(System.getProperty("user.home"));
-            }
+            String dir = new String(this.crypter.decrypt(this.config.getProperty("LogDir", "")));
+            this.currentLogDir = new File(dir);
         } else {
             this.currentLogDir = new File(System.getProperty("user.home"));
         }
     }
 
-    public void encipherFile(File file) throws UnsupportedEncodingException, IOException {
+    public void encipherFile(File file) throws IOException {
         byte[] data = this.readBytes(file);
         if (!this.crypter.isInitialized()) {
             this.crypter.initialize();
         }
-        byte[] key = this.crypter.decrypt(this.config.getProperty("Key", ""));
-        String encrypted = this.crypter.encrypt(data, new String(key, AppConfig.DEFAULT_ENCODING).toCharArray());
+        byte[] key2 = this.crypter.decrypt(this.config.getProperty("Key2", ""));
+        String encrypted = this.crypter.encrypt(data, new String(key2).toCharArray());
         Path filePath = Paths.get(file.getPath());
-        Files.write(filePath, encrypted.getBytes(AppConfig.DEFAULT_ENCODING));
+        Files.write(filePath, encrypted.getBytes());
     }
 
     public File getCurrentLogDir() {
@@ -144,7 +137,7 @@ public class FileService {
         return fileType;
     }
 
-    public byte[] getText(FileModel fileModel) throws UnsupportedEncodingException {
+    public byte[] getText(FileModel fileModel) {
         File file = new File(this.currentLogDir, fileModel.getFilename());
         if (!file.exists()) {
             return new byte[0];
@@ -160,24 +153,29 @@ public class FileService {
             this.crypter.initialize();
         }
 
-        byte[] key, keyPhrase, prefix, decrypted;
+        byte[] key, key2, keyPhrase, prefix, decrypted;
         key = this.crypter.decrypt(this.config.getProperty("Key", ""));
+        key2 = this.crypter.decrypt(this.config.getProperty("Key2", ""));
         prefix = this.crypter.decrypt(this.config.getProperty("Prefix", ""));
         keyPhrase = this.crypter.decrypt(this.config.getProperty("KeyPhrase", ""));
 
-        decrypted = this.crypter.decrypt(new String(data, AppConfig.DEFAULT_ENCODING), new String(key, AppConfig.DEFAULT_ENCODING).toCharArray());
+        decrypted = this.crypter.decrypt(new String(data), new String(key2).toCharArray());
         decrypted = this.crypter.decode(this.crypter.decode(decrypted, key), prefix);
         if (!matchArrayBeginings(decrypted, keyPhrase)) {
-            decrypted = this.crypter.decode(this.crypter.decode(data, key), prefix);
+            decrypted = this.crypter.decrypt(new String(data), new String(key2).toCharArray());
+            decrypted = this.crypter.decode(decrypted, prefix);
             if (!matchArrayBeginings(decrypted, keyPhrase)) {
-                decrypted = this.crypter.decode(data, prefix);
+                decrypted = this.crypter.decode(this.crypter.decode(data, key), prefix);
+                if (!matchArrayBeginings(decrypted, keyPhrase)) {
+                    decrypted = this.crypter.decode(data, prefix);
+                }
             }
         }
 
         return decrypted;
     }
 
-    public Image getImage(FileModel fileModel) throws UnsupportedEncodingException {
+    public Image getImage(FileModel fileModel) {
         File file = new File(this.currentLogDir, fileModel.getFilename());
         if (!file.exists()) {
             //throw exception
@@ -193,10 +191,11 @@ public class FileService {
             this.crypter.initialize();
         }
 
-        byte[] key, decrypted;
+        byte[] key, key2, decrypted;
         key = this.crypter.decrypt(this.config.getProperty("Key", ""));
+        key2 = this.crypter.decrypt(this.config.getProperty("Key2", ""));
 
-        decrypted = this.crypter.decrypt(new String(data, AppConfig.DEFAULT_ENCODING), new String(key, AppConfig.DEFAULT_ENCODING).toCharArray());
+        decrypted = this.crypter.decrypt(new String(data), new String(key2).toCharArray());
         decrypted = this.crypter.decode(decrypted, key);
 
         Image img = new Image(new ByteArrayInputStream(decrypted));

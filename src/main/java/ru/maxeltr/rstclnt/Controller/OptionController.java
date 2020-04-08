@@ -79,7 +79,7 @@ public class OptionController implements Initializable {
     private TextField clientIdField;
 
     @FXML
-    private TextField grantTypesField;
+    private TextField key2Field;
 
     @FXML
     private Button cancelOptionsButton;
@@ -118,17 +118,13 @@ public class OptionController implements Initializable {
             }
         }
 
-        try {
-            this.config.setProperty("Prefix", this.crypter.encrypt(this.prefixField.getText().getBytes(AppConfig.DEFAULT_ENCODING)));
-            this.config.setProperty("Key", this.crypter.encrypt(this.keyField.getText().getBytes(AppConfig.DEFAULT_ENCODING)));
-            this.config.setProperty("KeyPhrase", this.crypter.encrypt(this.keyPhraseField.getText().getBytes(AppConfig.DEFAULT_ENCODING)));
-            this.config.setProperty("LogDir", this.crypter.encrypt(this.logDirField.getText().getBytes(AppConfig.DEFAULT_ENCODING)));
-            this.config.setProperty("ClientSecret", this.crypter.encrypt(this.clientSecretField.getText().getBytes(AppConfig.DEFAULT_ENCODING)));
-            this.config.setProperty("ClientId", this.crypter.encrypt(this.clientIdField.getText().getBytes(AppConfig.DEFAULT_ENCODING)));
-//            this.config.setProperty("GrantTypes", this.crypter.encrypt(this.grantTypesField.getText().getBytes(AppConfig.DEFAULT_ENCODING)));
-        } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(OptionController.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        this.config.setProperty("Prefix", this.crypter.encrypt(this.prefixField.getText().getBytes()));
+        this.config.setProperty("Key", this.crypter.encrypt(this.keyField.getText().getBytes()));
+        this.config.setProperty("KeyPhrase", this.crypter.encrypt(this.keyPhraseField.getText().getBytes()));
+        this.config.setProperty("LogDir", this.crypter.encrypt(this.logDirField.getText().getBytes()));
+        this.config.setProperty("ClientSecret", this.crypter.encrypt(this.clientSecretField.getText().getBytes()));
+        this.config.setProperty("ClientId", this.crypter.encrypt(this.clientIdField.getText().getBytes()));
+        this.config.setProperty("Key2", this.crypter.encrypt(this.key2Field.getText().getBytes()));
     }
 
     private void saveNonEncryptedSettings() {
@@ -142,21 +138,17 @@ public class OptionController implements Initializable {
             }
         }
 
-        try {
-            this.prefixField.setText(new String(this.crypter.decrypt(this.config.getProperty("Prefix", "")), AppConfig.DEFAULT_ENCODING));
-            this.keyField.setText(new String(this.crypter.decrypt(this.config.getProperty("Key", "")), AppConfig.DEFAULT_ENCODING));
-            this.keyPhraseField.setText(new String(this.crypter.decrypt(this.config.getProperty("KeyPhrase", "")), AppConfig.DEFAULT_ENCODING));
-            this.logDirField.setText(new String(this.crypter.decrypt(this.config.getProperty("LogDir", "")), AppConfig.DEFAULT_ENCODING));
-            this.clientSecretField.setText(new String(this.crypter.decrypt(this.config.getProperty("ClientSecret", "")), AppConfig.DEFAULT_ENCODING));
-            this.clientIdField.setText(new String(this.crypter.decrypt(this.config.getProperty("ClientId", "")), AppConfig.DEFAULT_ENCODING));
-//            this.grantTypesField.setText(new String(this.crypter.decrypt(this.config.getProperty("GrantTypes", "")), AppConfig.DEFAULT_ENCODING));
-        } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(OptionController.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        this.prefixField.setText(new String(this.crypter.decrypt(this.config.getProperty("Prefix", ""))));
+        this.keyField.setText(new String(this.crypter.decrypt(this.config.getProperty("Key", ""))));
+        this.keyPhraseField.setText(new String(this.crypter.decrypt(this.config.getProperty("KeyPhrase", ""))));
+        this.logDirField.setText(new String(this.crypter.decrypt(this.config.getProperty("LogDir", ""))));
+        this.clientSecretField.setText(new String(this.crypter.decrypt(this.config.getProperty("ClientSecret", ""))));
+        this.clientIdField.setText(new String(this.crypter.decrypt(this.config.getProperty("ClientId", ""))));
+        this.key2Field.setText(new String(this.crypter.decrypt(this.config.getProperty("Key2", ""))));
     }
 
     private void getNonEncryptedSettings() {
-        this.codePageField.setText(this.config.getProperty("CodePage", AppConfig.DEFAULT_ENCODING));
+        this.codePageField.setText(this.config.getProperty("CodePage", ""));
     }
 
     @FXML

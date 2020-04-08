@@ -302,15 +302,9 @@ public class RestService {
         }
 
         Map<String, String> body = new HashMap<>();
-        try {
-            body.put("grant_type", "client_credentials");
-            body.put("client_secret", new String(this.crypter.decrypt(this.config.getProperty("ClientSecret", "")), AppConfig.DEFAULT_ENCODING));
-            body.put("client_id", new String(this.crypter.decrypt(this.config.getProperty("ClientId", "")), AppConfig.DEFAULT_ENCODING));
-        } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(RestService.class.getName()).log(Level.SEVERE, "Cannot get client credentials from config.", ex);
-
-            return this.accessToken;
-        }
+        body.put("grant_type", "client_credentials");
+        body.put("client_secret", new String(this.crypter.decrypt(this.config.getProperty("ClientSecret", ""))));
+        body.put("client_id", new String(this.crypter.decrypt(this.config.getProperty("ClientId", ""))));
 
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));

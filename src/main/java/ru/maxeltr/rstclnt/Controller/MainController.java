@@ -178,7 +178,7 @@ public class MainController extends AbstractController implements Initializable 
     }
 
     @FXML
-    private void handleEncipherFile(ActionEvent event) throws UnsupportedEncodingException, IOException {
+    private void handleEncipherFile(ActionEvent event) throws IOException {
         FileChooser chooser = new FileChooser();
         Window stage = root.getScene().getWindow();
         File file = chooser.showOpenDialog(stage);
