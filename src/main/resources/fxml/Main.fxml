@@ -62,7 +62,7 @@
     </SplitPane>
     <AnchorPane prefHeight="31.0" prefWidth="636.0" AnchorPane.bottomAnchor="-2.0" AnchorPane.leftAnchor="1.0" AnchorPane.rightAnchor="-1.0">
       <children>
-        <HBox alignment="CENTER" prefHeight="31.0" prefWidth="634.0" AnchorPane.bottomAnchor="1.5" AnchorPane.leftAnchor="-1.0" AnchorPane.rightAnchor="3.0" AnchorPane.topAnchor="-1.5">
+        <HBox alignment="CENTER" prefHeight="31.0" prefWidth="246.0" AnchorPane.bottomAnchor="1.5" AnchorPane.leftAnchor="204.0" AnchorPane.rightAnchor="186.0" AnchorPane.topAnchor="-1.5">
           <children>
             <Button id="nextPage" fx:id="prevPage" minWidth="25.0" mnemonicParsing="false" onAction="#handleGetPrevPage" prefWidth="38.0" text="&lt;-">
               <HBox.margin>
@@ -77,6 +77,7 @@
             </Button>
           </children>
         </HBox>
+        <TextField fx:id="runsField" layoutX="564.0" layoutY="5.0" prefWidth="56.0" />
       </children>
     </AnchorPane>
   </children>
