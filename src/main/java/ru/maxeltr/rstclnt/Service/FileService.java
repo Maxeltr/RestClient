@@ -32,7 +32,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.collections.FXCollections;
@@ -137,16 +141,16 @@ public class FileService {
         return fileType;
     }
 
-    public byte[] getText(FileModel fileModel) {
+    public Map<byte[], String> decryptText(FileModel fileModel) {
         File file = new File(this.currentLogDir, fileModel.getFilename());
         if (!file.exists()) {
-            return new byte[0];
+            return null;
         }
 
         byte[] data = this.readBytes(file);
         if (data.length == 0) {
             Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("Cannot read file: %s.%n", this.currentLogDir + File.separator + fileModel.getFilename()));
-            return data;
+            return null;
         }
 
         if (!this.crypter.isInitialized()) {
@@ -159,20 +163,28 @@ public class FileService {
         prefix = this.crypter.decrypt(this.config.getProperty("Prefix", ""));
         keyPhrase = this.crypter.decrypt(this.config.getProperty("KeyPhrase", ""));
 
+        String runs = "3pkk2";
         decrypted = this.crypter.decrypt(new String(data), new String(key2).toCharArray());
         decrypted = this.crypter.decode(this.crypter.decode(decrypted, key), prefix);
         if (!matchArrayBeginings(decrypted, keyPhrase)) {
+            runs = "2pk2";
             decrypted = this.crypter.decrypt(new String(data), new String(key2).toCharArray());
             decrypted = this.crypter.decode(decrypted, prefix);
             if (!matchArrayBeginings(decrypted, keyPhrase)) {
+                runs = "2pk";
                 decrypted = this.crypter.decode(this.crypter.decode(data, key), prefix);
                 if (!matchArrayBeginings(decrypted, keyPhrase)) {
+                    runs = "1p";
                     decrypted = this.crypter.decode(data, prefix);
                 }
             }
         }
 
-        return decrypted;
+        Map decryptedData = new HashMap<>();
+        decryptedData.put("data", decrypted);
+        decryptedData.put("runs", runs);
+
+        return decryptedData;
     }
 
     public Image getImage(FileModel fileModel) {

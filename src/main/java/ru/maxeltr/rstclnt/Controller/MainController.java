@@ -10,6 +10,7 @@ import javafx.stage.DirectoryChooser;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.collections.FXCollections;
@@ -238,11 +239,16 @@ public class MainController extends AbstractController implements Initializable 
             case ("text/plain"):
                 this.changeToTexWin();
 
-                byte[] decrypted = this.fileService.getText(fileModel);
+                Map decrypted = this.fileService.decryptText(fileModel);
+                if (decrypted == null) {
+                    return;
+                }
+
+                byte[] text = (byte[]) decrypted.get("data");
 
                 String str;
                 try {
-                    str = new String(decrypted, this.config.getProperty("CodePage", AppConfig.DEFAULT_ENCODING));
+                    str = new String(text, this.config.getProperty("CodePage", AppConfig.DEFAULT_ENCODING));
                 } catch (UnsupportedEncodingException ex) {
                     Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
                     return;
