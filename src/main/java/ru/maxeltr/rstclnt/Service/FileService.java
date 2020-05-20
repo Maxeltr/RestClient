@@ -176,6 +176,9 @@ public class FileService {
                 if (!matchArrayBeginings(decrypted, keyPhrase)) {
                     runs = "1p";
                     decrypted = this.crypter.decode(data, prefix);
+                    if (!matchArrayBeginings(decrypted, keyPhrase)) {
+                        runs = "unknown";
+                    }
                 }
             }
         }
@@ -187,16 +190,19 @@ public class FileService {
         return decryptedData;
     }
 
-    public Image getImage(FileModel fileModel) {
+    public Map<byte[], String> decryptImage(FileModel fileModel) {
         File file = new File(this.currentLogDir, fileModel.getFilename());
         if (!file.exists()) {
-            //throw exception
+            Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("File: %s does not exist.%n", this.currentLogDir + File.separator + fileModel.getFilename()));
+
+            return null;
         }
 
         byte[] data = this.readBytes(file);
         if (data.length == 0) {
             Logger.getLogger(FileService.class.getName()).log(Level.WARNING, String.format("Cannot read file: %s.%n", this.currentLogDir + File.separator + fileModel.getFilename()));
-            //throw exception
+
+            return null;
         }
 
         if (!this.crypter.isInitialized()) {
@@ -207,16 +213,25 @@ public class FileService {
         key = this.crypter.decrypt(this.config.getProperty("Key", ""));
         key2 = this.crypter.decrypt(this.config.getProperty("Key2", ""));
 
+        String runs = "2kk2";
         decrypted = this.crypter.decrypt(new String(data), new String(key2).toCharArray());
         decrypted = this.crypter.decode(decrypted, key);
 
         Image img = new Image(new ByteArrayInputStream(decrypted));
         if (img.isError()) {
+            runs = "1k";
             decrypted = this.crypter.decode(data, key);
             img = new Image(new ByteArrayInputStream(decrypted));
+            if (img.isError()) {
+                runs = "unknown";
+            }
         }
 
-        return img;
+        Map decryptedData = new HashMap<>();
+        decryptedData.put("image", img);
+        decryptedData.put("runs", runs);
+
+        return decryptedData;
     }
 
     private boolean matchArrayBeginings(byte[] largerArray, byte[] smallerArray) {

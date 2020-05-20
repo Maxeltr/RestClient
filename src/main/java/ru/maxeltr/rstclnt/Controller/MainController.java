@@ -79,6 +79,9 @@ public class MainController extends AbstractController implements Initializable 
     @FXML
     private TextField currentPageField;
 
+    @FXML
+    private TextField runsField;
+
     private ListView<String> textWin;
 
     private ImageView logImageView;
@@ -241,6 +244,8 @@ public class MainController extends AbstractController implements Initializable 
 
                 Map decrypted = this.fileService.decryptText(fileModel);
                 if (decrypted == null) {
+                    Logger.getLogger(MainController.class.getName()).log(Level.WARNING, "Cannot decrypt text.");
+
                     return;
                 }
 
@@ -251,6 +256,7 @@ public class MainController extends AbstractController implements Initializable 
                     str = new String(text, this.config.getProperty("CodePage", AppConfig.DEFAULT_ENCODING));
                 } catch (UnsupportedEncodingException ex) {
                     Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
+
                     return;
                 }
 
@@ -262,17 +268,29 @@ public class MainController extends AbstractController implements Initializable 
                 this.textWin.getItems().clear();
                 this.textWin.setItems(lvItems);
                 this.textWin.scrollTo(0);
+                this.runsField.setText((String) decrypted.get("runs"));
 
                 break;
             case ("image/jpeg"):
                 this.changeToImgWin();
 
                 try {
-                    Image img = this.fileService.getImage(fileModel);
+                    Map data = this.fileService.decryptImage(fileModel);
+                    if (data == null) {
+                        Logger.getLogger(MainController.class.getName()).log(Level.WARNING, "Cannot decrypt image.");
+
+                        return;
+                    }
+
+                    Image img = (Image) data.get("image");
                     this.logImageView.setImage(img);
+                    this.runsField.setText((String) data.get("runs"));
+
                 } catch (Exception ex) {
                     Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
                 }
+
+
 
                 break;
             default:
