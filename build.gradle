@@ -1,57 +1,24 @@
-//apply plugin: 'java'
-//apply plugin: 'jacoco'
-//apply plugin: 'application'
-//
-//plugins {
-//    id 'application'
-//    id 'org.springframework.boot' version '2.2.0.RELEASE'
-//    id 'io.spring.dependency-management' version '1.0.8.RELEASE'
-//    id 'java'
-//    //    id 'org.openjfx.javafxplugin' version '0.0.8'
-//}
-//
-//repositories {
-//    mavenCentral()
-//}
-//
-//dependencies {
-//    implementation 'org.springframework.boot:spring-boot-starter'
-//	testImplementation('org.springframework.boot:spring-boot-starter-test') {
-//		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
-//	}
-//    //testCompile 'junit:junit:4.12'
-//}
-
-//javafx {
-//    version = "11.0.2"
-//    modules = [ 'javafx.controls', 'javafx.fxml']
-//}
-
-//mainClassName = 'ru.maxeltr.rstclnt.Main'
-
-//jar {
-//    manifest {
-//        attributes(
-//                'Main-Class': 'ru.maxeltr.rstclnt.Main'
-//        )
-//    }
-//}
-//description = 'Rest client'
-
 plugins {
     id 'application'
+    id 'org.openjfx.javafxplugin' version '0.0.8'
     id 'org.springframework.boot' version '2.2.5.RELEASE'
     id 'io.spring.dependency-management' version '1.0.8.RELEASE'
     id 'java'
 }
 
-group = 'ru.maxeltr'
-version = '0.0.1'
-sourceCompatibility = '1.8'
-
 repositories {
     mavenCentral()
 }
+
+javafx {
+    version = "11"
+    modules = [ 'javafx.controls' , 'javafx.fxml']
+}
+
+
+
+//mainClassName = 'HelloFX'
+mainClassName = "ru.maxeltr.rstclnt.Main"
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -61,21 +28,13 @@ dependencies {
     }
 }
 
-test {
-    useJUnitPlatform()
-}
 
-mainClassName = 'ru.maxeltr.rstclnt.Main'
-description = 'Rest client'
 
 jar {
     manifest {
-        attributes(
-                'Main-Class': 'ru.maxeltr.rstclnt.Main'
-        )
+        attributes 'Main-Class': 'ru.maxeltr.rstclnt.Main'
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }
-
-
-
-
