@@ -13,6 +13,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Group;
@@ -35,8 +36,10 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TextField;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import ru.maxeltr.rstclnt.Config.AppConfig;
@@ -81,6 +84,9 @@ public class MainController extends AbstractController implements Initializable 
 
     @FXML
     private TextField runsField;
+
+    @FXML
+    private Circle circle;
 
     private ListView<String> textWin;
 
@@ -150,6 +156,8 @@ public class MainController extends AbstractController implements Initializable 
             event.consume();
         });
 
+        fileTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
         ObservableList files = this.fileService.getLocalFiles();
         if (!files.isEmpty()) {
             this.fileTable.setItems(files);
@@ -176,8 +184,30 @@ public class MainController extends AbstractController implements Initializable 
             this.fileTable.getItems().remove(fileModel);
         });
 
+        MenuItem mi1DelAll = new MenuItem("Delete selected");
+        mi1DelAll.setOnAction((ActionEvent event) -> {
+            //FileModel fileModel = this.fileTable.getSelectionModel().getSelectedItem();
+            ObservableList<FileModel> selectedItems = fileTable.getSelectionModel().getSelectedItems();
+
+            for (FileModel fileModel : selectedItems) {
+                Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Delete file: %s .%n", fileModel.getFilename()));
+                System.out.println(String.format("Delete file: %s .%n", fileModel.getFilename()));
+                File file = new File(this.fileService.getCurrentLogDir(), fileModel.getFilename());
+                if (file.exists() && !file.delete()) {
+                    Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Cannot delete file: %s from disk.%n", file.getName()));
+                    continue;
+                }
+                if (!this.restService.deleteFile(fileModel)) {
+                    Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Cannot delete file: %s from server.%n", fileModel.getFilename()));
+                    continue;
+                }
+            }
+            this.fileTable.getItems().removeAll(selectedItems);
+        });
+
         ContextMenu menu = new ContextMenu();
         menu.getItems().add(mi1);
+        menu.getItems().add(mi1DelAll);
         this.fileTable.setContextMenu(menu);
     }
 
@@ -215,13 +245,14 @@ public class MainController extends AbstractController implements Initializable 
 
     @FXML
     private void handleFileTableClicked(MouseEvent event) throws UnsupportedEncodingException {
+        this.clearContent();
+        this.circle.setFill(javafx.scene.paint.Color.RED);
         if (event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 2) {
             FileModel fileModel = this.fileTable.getSelectionModel().getSelectedItem();
             if (fileModel == null) {
                 Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("File model is null.%n"));
                 return;
             }
-
             File file = new File(this.fileService.getCurrentLogDir(), fileModel.getFilename());
             if (!file.exists()) {
                 Logger.getLogger(MainController.class.getName()).log(Level.WARNING, String.format("Cannot show content of file: %s, because file does not exist on disk. Try to download.%n", file.getName()));
@@ -230,9 +261,8 @@ public class MainController extends AbstractController implements Initializable 
                     return;
                 }
             }
-
             this.viewContent(fileModel);
-
+            this.circle.setFill(javafx.scene.paint.Color.GREEN);
         }
     }
 
@@ -289,8 +319,6 @@ public class MainController extends AbstractController implements Initializable 
                 } catch (Exception ex) {
                     Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
                 }
-
-
 
                 break;
             default:
@@ -450,5 +478,10 @@ public class MainController extends AbstractController implements Initializable 
         alert.setContentText(message);
 
         alert.showAndWait();
+    }
+
+    private void clearContent() {
+        this.textWin.getItems().clear();
+        this.logImageView.setImage(null);
     }
 }
